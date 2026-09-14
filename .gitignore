@@ -1,0 +1,25 @@
+# ビルド成果物・キャッシュ
+build/
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# 署名・公証スクリプトの実体（テンプレート .example のみコミット）
+scripts/sign-and-notarize.sh
+
+# 秘密情報・証明書類（絶対にコミットしない）
+.env
+.env.*
+*.p12
+*.cer
+*.crt
+*.mobileprovision
+*.pem
+*.key
+
+# エディタ・個人用
+*.xcuserdatad/
+.vscode/
+idea/

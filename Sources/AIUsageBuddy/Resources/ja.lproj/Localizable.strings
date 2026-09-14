@@ -1,0 +1,162 @@
+/* AI Usage Buddy — 日本語 */
+
+"app.name" = "AI Usage Buddy";
+
+/* Limits */
+"limit.fiveHour" = "5時間枠";
+"limit.weekly" = "週間枠";
+
+/* Character states */
+"character.state.energetic" = "元気";
+"character.state.normal" = "通常";
+"character.state.tired" = "疲れている";
+"character.state.sleeping" = "睡眠中";
+"character.state.unknown" = "接続が必要";
+
+/* Accounts */
+"account.default.name" = "既定のCodexアカウント";
+"account.unnamed" = "名前未設定のアカウント";
+
+/* Popover */
+"popover.account" = "アカウント";
+"popover.noAccount" = "アカウントが登録されていません。設定から追加してください。";
+"popover.noData" = "データ未取得";
+"popover.resetUnknown" = "リセット時刻不明";
+"popover.manualBadge" = "手動補正中";
+"popover.manualActive" = "手動補正値を表示しています（次の自動取得成功時に公式値へ戻ります）";
+"popover.staleWarning" = "データが古くなっています";
+"popover.lastFetched" = "最終取得";
+"popover.refresh.help" = "手動更新";
+"popover.openSettings" = "設定…";
+"popover.quit" = "終了";
+
+/* Settings */
+"settings.title" = "設定";
+"settings.accounts" = "アカウント";
+"settings.addAccount" = "アカウントを追加…";
+"settings.rename" = "表示名を変更";
+"settings.delete" = "アカウントを削除";
+"settings.accountName" = "表示名";
+"settings.login.waiting" = "ブラウザでChatGPTアカウントへのログインを完了してください。";
+"settings.login.reopen" = "認証ページを再度開く";
+"settings.login.cancel" = "キャンセル";
+"settings.login.completing" = "ログインを確認中…";
+"settings.login.success" = "追加しました:";
+"settings.login.failed" = "ログインに失敗しました";
+"settings.selectedAccount" = "選択中のアカウント";
+"settings.displayLimit" = "メニューバー表示リミット";
+"settings.manual.hint" = "自動取得が失敗している間だけ、残量%を手動で入力できます。";
+"settings.manual.clear" = "解除";
+"settings.manual.apply" = "手動補正を適用";
+"settings.refreshNow" = "今すぐ更新";
+"settings.refreshing" = "更新中…";
+"settings.notifications" = "通知";
+"settings.notificationsEnabled" = "低残量通知";
+"settings.threshold" = "しきい値";
+"settings.notificationDenied" = "通知が許可されていません。システム設定から許可してください。";
+"settings.openNotificationSettings" = "システム設定を開く…";
+"settings.notificationsCommonNote" = "通知設定はアプリ全体で共通です。各アカウント・各リミット・各しきい値につき、リセット枠ごとに1回だけ通知します。";
+"settings.general" = "一般";
+"settings.launchAtLogin" = "ログイン時に自動起動";
+"settings.rerunOnboarding" = "初回セットアップを再実行…";
+"settings.language" = "言語";
+"settings.language.system" = "システムに追従";
+"settings.language.japanese" = "日本語";
+"settings.language.english" = "English";
+"settings.refreshInterval" = "自動更新間隔";
+"settings.about" = "情報";
+"settings.about.version" = "バージョン";
+"settings.about.build" = "ビルド";
+"settings.about.source" = "データ取得元";
+"settings.about.sourceValue" = "Codex公式 app-server（ChatGPTアプリ同梱）";
+"settings.plan" = "プラン";
+
+/* Settings - shortcuts */
+"settings.shortcuts" = "グローバルショートカット";
+"shortcut.name.showUsage" = "クイック利用状況の表示";
+"shortcut.name.refresh" = "手動更新";
+"shortcut.recording" = "キーを入力…";
+"shortcut.disabled" = "無効";
+"shortcut.restoreDefaults" = "初期値に戻す";
+"shortcut.note" = "クリックして新しいキーを入力できます。Esc でキャンセル、Delete で無効化します。";
+"shortcut.error.duplicate" = "2つのショートカットが同じキーです。別のキーを指定してください。";
+"shortcut.error.missingKey" = "キーが指定されていません。";
+"shortcut.error.missingModifiers" = "修飾キー（⌘⌥⌃⇧のいずれか）が必要です。";
+"shortcut.error.registrationFailed" = "ショートカットの登録に失敗しました（他のアプリと競合している可能性があります）";
+
+/* Settings - update */
+"settings.update" = "アップデート";
+"settings.update.automaticCheck" = "自動で更新を確認（1日1回）";
+"settings.update.checkNow" = "今すぐ確認…";
+"settings.update.checking" = "確認中…";
+"settings.update.upToDate" = "最新です";
+"settings.update.available" = "新しいバージョンがあります";
+"settings.update.notConfigured" = "更新の取得元（GitHub）が未設定のため、手動でご確認ください";
+"settings.update.failed" = "確認に失敗しました";
+"settings.update.openReleases" = "リリースページを開く…";
+"settings.update.note" = "署名・公証の手続きが済むまでは自動インストールを行わず、GitHub Releasesへの手動案内のみです。";
+
+/* Menu bar context menu */
+"context.refreshNow" = "今すぐ更新";
+"context.switchAccount" = "アカウント切り替え";
+"context.rerunOnboarding" = "セットアップを再実行…";
+"context.openSettings" = "設定…";
+"context.checkForUpdates" = "更新を確認…";
+"context.quit" = "終了";
+
+/* Onboarding */
+"onboarding.window.title" = "AI Usage Buddy — セットアップ";
+"onboarding.skip" = "スキップ";
+"onboarding.skip.hint" = "セットアップをスキップして利用を開始します";
+"onboarding.back" = "戻る";
+"onboarding.next" = "次へ";
+"onboarding.finish" = "始める";
+"onboarding.step.0.title" = "ようこそ";
+"onboarding.step.0.body" = "AI Usage Buddyは、ChatGPTプランのCodex利用枠（5時間枠・週間枠）の残量をメニューバーのキャラクターで表示します。";
+"onboarding.welcome.bullet1" = "メニューバーのキャラクターの顔で残量の目安が分かります";
+"onboarding.welcome.bullet2" = "クリックすると残量%・リセット時刻などを確認できます";
+"onboarding.welcome.bullet3" = "最初は接続していなくても大丈夫。このまま使い始められます";
+"onboarding.step.1.title" = "公式アカウント接続";
+"onboarding.step.1.body" = "ChatGPTアカウントに公式OAuthログインして利用枠を取得します。ブラウザで認証を行います。";
+"onboarding.connect.action" = "アカウントを接続…";
+"onboarding.connect.optional" = "このステップはスキップできます。後で設定から追加できます。";
+"onboarding.step.2.title" = "通知の許可";
+"onboarding.step.2.body" = "残量が少なくなったときに通知できます。許可はあとでシステム設定から変更できます。";
+"onboarding.notifications.action" = "通知を許可…";
+"onboarding.notifications.done" = "通知の許可を要求しました";
+"onboarding.notifications.optional" = "このステップはスキップできます。";
+"onboarding.step.3.title" = "ログイン時の自動起動";
+"onboarding.step.3.body" = "Macにログインしたときに自動で起動する場合は、明示的に登録してください。";
+"onboarding.loginItem.action" = "自動起動を有効にする";
+"onboarding.loginItem.enabled" = "自動起動が有効です";
+"onboarding.loginItem.optional" = "登録しない場合はそのまま次へ進んでください（後で設定から変更できます）。";
+"onboarding.step.4.title" = "使い方";
+"onboarding.step.4.body" = "基本的な使い方の確認です。";
+"onboarding.guide.bullet1" = "キャラクターをクリック → 残量の詳細・手動更新・設定";
+"onboarding.guide.bullet2" = "キャラクターを右クリック → 今すぐ更新・アカウント切り替え・終了など";
+"onboarding.guide.bullet3" = "⌃⌥U でクイック利用状況ウインドウ、⌃⌥R で手動更新（設定で変更可能）";
+"onboarding.guide.bullet4" = "残量がしきい値を下回ると通知（既定20%・10%）";
+"onboarding.guide.bullet5" = "取得に失敗したときは前回値を「データが古くなっています」と表示します";
+
+/* Quick usage window */
+"quickusage.window.title" = "AI Usage Buddy — 利用状況";
+
+/* Error kinds */
+"error.kind.authenticationRequired.title" = "再ログインが必要です";
+"error.kind.authenticationRequired.explanation" = "公式連携でのログインが解除されています。設定からアカウントを再接続してください。";
+"error.kind.officialIntegrationMissing.title" = "公式Codex連携が見つかりません";
+"error.kind.officialIntegrationMissing.explanation" = "ChatGPTアプリ（同梱のCodex CLI）が見つからないか起動できません。ChatGPTアプリのインストール状況をご確認ください。";
+"error.kind.timeout.title" = "応答がタイムアウトしました";
+"error.kind.timeout.explanation" = "公式連携からの応答が時間内に返りませんでした。しばらくしてから再試行してください。";
+"error.kind.serverError.title" = "サーバーエラー";
+"error.kind.serverError.explanation" = "公式連携サーバーがエラーを返しました。時間をおいて再試行してください。";
+"error.kind.invalidResponse.title" = "不正な応答";
+"error.kind.invalidResponse.explanation" = "公式連携から予期しない形式の応答が返りました。ChatGPTアプリの更新で仕様が変わった可能性があります。";
+"error.kind.processTerminated.title" = "連携プロセスが終了しました";
+"error.kind.processTerminated.explanation" = "公式連携プロセスが終了したため取得できませんでした。再試行すると自動的に再起動します。";
+"error.kind.stale.title" = "データが古くなっています";
+"error.kind.stale.explanation" = "最後に取得した値を表示しています。再試行すると最新値を取得します。";
+"error.kind.other.title" = "取得に失敗しました";
+"error.kind.other.explanation" = "原因不明のエラーです。再試行しても続く場合は設定をご確認ください。";
+"error.action.retry" = "再試行";
+"error.action.openSettings" = "設定…";

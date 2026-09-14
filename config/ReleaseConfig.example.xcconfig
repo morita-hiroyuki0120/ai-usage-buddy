@@ -1,0 +1,25 @@
+// AI Usage Buddy — リリース設定のテンプレート
+//
+// 使い方:
+//   cp config/ReleaseConfig.example.xcconfig config/ReleaseConfig.xcconfig
+//   （config/ReleaseConfig.xcconfig が無い場合はこのテンプレートの値が使われます）
+//
+// ここには秘密情報を書かないでください（所有者名・リポジトリ名・URL・バージョンのみ）。
+// Apple ID・Team ID・証明書名などは scripts/sign-and-notarize.sh.example を参照。
+
+// アプリバージョン（CFBundleShortVersionString）。形式: 1.2.3 のような数値ピリオド区切り
+APP_MARKETING_VERSION = 1.0.0
+
+// ビルド番号（CFBundleVersion）。リリースごとに +1 する
+APP_BUILD_NUMBER = 1
+
+// GitHub所有者（リポジトリ公開後に設定）。空のままなら更新確認は行われず
+// 手動更新モード（「GitHub設定が未完了」の表示）になる
+GITHUB_OWNER =
+
+// GitHubリポジトリ名
+GITHUB_REPOSITORY = ai-usage-buddy
+
+// Sparkle 2 用 Appcast URL（後続作業。導入まで空のまま）
+// HTTPSのみ有効。空の場合は自動更新（自動インストール）に使われない
+SPARKLE_APPCAST_URL =

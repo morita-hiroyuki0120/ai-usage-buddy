@@ -1,0 +1,95 @@
+#!/bin/bash
+# AI Usage Buddy — Developer ID署名 + 公証（テンプレート・実行前に必ず読むこと）
+#
+# 使い方:
+#   1. このファイルをコピー: cp scripts/sign-and-notarize.sh.example scripts/sign-and-notarize.sh
+#      （scripts/sign-and-notarize.sh はリポジトリへコミットしない・秘密情報を書かない）
+#   2. 環境変数を設定して実行:
+#        export AI_USAGE_BUDDY_SIGNING_IDENTITY="Developer ID Application: YOUR NAME (TEAMID)"
+#        export AI_USAGE_BUDDY_TEAM_ID="TEAMID"
+#        export AI_USAGE_BUDDY_NOTARY_PROFILE="notary-profile-name"
+#        export AI_USAGE_BUDDY_BUNDLE_ID="com.aiusagebuddy.app"
+#        ./scripts/sign-and-notarize.sh
+#
+# 環境変数（すべて必須・値はスクリプト内に書かない）:
+#   AI_USAGE_BUDDY_SIGNING_IDENTITY  キーチェーン内の Developer ID Application 証明書名
+#   AI_USAGE_BUDDY_TEAM_ID           Apple Developer の Team ID（10文字英数字）
+#   AI_USAGE_BUDDY_NOTARY_PROFILE    xcrun notarytool store-credentials で保存したプロファイル名
+#   AI_USAGE_BUDDY_BUNDLE_ID         Bundle Identifier（com.aiusagebuddy.app）
+#
+# 必要な前提（詳細は README「署名・公証の手順」）:
+#   - Apple Developer Program 加入済み
+#   - Developer ID Application 証明書をキーチェーンへインポート済み
+#   - 公証プロファイルを保存済み:
+#       xcrun notarytool store-credentials "notary-profile-name" \
+#         --apple-id "you@example.com" --team-id "TEAMID" \
+#         --password "app-specific-password"
+#     （Apple ID・パスワードはこのスクリプトに書かず、上記コマンドでキーチェーンへ保存する）
+#
+# このスクリプトは必要な環境変数が揃っていなければ、署名も公証も行わずに停止する。
+set -euo pipefail
+
+# --- 1) 環境変数の確認（不足なら実行しない） ---
+MISSING=()
+[[ -z "${AI_USAGE_BUDDY_SIGNING_IDENTITY:-}" ]] && MISSING+=("AI_USAGE_BUDDY_SIGNING_IDENTITY（Developer ID Application 証明書名）")
+[[ -z "${AI_USAGE_BUDDY_TEAM_ID:-}" ]] && MISSING+=("AI_USAGE_BUDDY_TEAM_ID（Team ID）")
+[[ -z "${AI_USAGE_BUDDY_NOTARY_PROFILE:-}" ]] && MISSING+=("AI_USAGE_BUDDY_NOTARY_PROFILE（notarytool のキーチェーンプロファイル名）")
+[[ -z "${AI_USAGE_BUDDY_BUNDLE_ID:-}" ]] && MISSING+=("AI_USAGE_BUDDY_BUNDLE_ID（Bundle Identifier）")
+
+if (( ${#MISSING[@]} > 0 )); then
+  echo "==> 署名・公証に必要な環境変数が不足しているため、何も実行しない:" >&2
+  for item in "${MISSING[@]}"; do
+    echo "    - $item" >&2
+  done
+  echo "    README「署名・公証の手順」を参照して設定すること。" >&2
+  exit 1
+fi
+
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+APP_NAME="AI Usage Buddy"
+RELEASE_DIR="$PROJECT_ROOT/build/release"
+APP_ROOT="$RELEASE_DIR/$APP_NAME.app"
+
+if [[ ! -d "$APP_ROOT" ]]; then
+  echo "==> .app が無い。先に ./scripts/package-release.sh を実行すること:" >&2
+  echo "    $APP_ROOT" >&2
+  exit 1
+fi
+
+IDENTITY="$AI_USAGE_BUDDY_SIGNING_IDENTITY"
+TEAM_ID="$AI_USAGE_BUDDY_TEAM_ID"
+NOTARY_PROFILE="$AI_USAGE_BUDDY_NOTARY_PROFILE"
+BUNDLE_ID="$AI_USAGE_BUDDY_BUNDLE_ID"
+
+# --- 2) 証明書の存在確認 ---
+if ! security find-identity -v -p codesigning | grep -q "$IDENTITY"; then
+  echo "==> 証明書がキーチェーンに見つからない（署名しない）: $IDENTITY" >&2
+  echo "    Developer ID Application 証明書をインポートしてから再実行すること。" >&2
+  exit 1
+fi
+
+VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_ROOT/Contents/Info.plist")
+BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP_ROOT/Contents/Info.plist")
+NOTARIZED_ZIP="$RELEASE_DIR/AIUsageBuddy-${VERSION}-${BUILD}-arm64-notarization.zip"
+
+# --- 3) Hardened Runtime 有効で Developer ID 署名 ---
+echo "==> 署名（Developer ID Application + Hardened Runtime）: $IDENTITY"
+codesign --force --deep --options runtime --sign "$IDENTITY" "$APP_ROOT"
+codesign --verify --strict "$APP_ROOT"
+
+# --- 4) 公証用 zip を作成して提出 ---
+echo "==> 公証（notarytool / profile: $NOTARY_PROFILE）"
+rm -f "$NOTARIZED_ZIP"
+ditto -c -k --keepParent "$APP_ROOT" "$NOTARIZED_ZIP"
+xcrun notarytool submit "$NOTARIZED_ZIP" --keychain-profile "$NOTARY_PROFILE" --wait
+
+# --- 5) 公証チケットのステープルと検証 ---
+echo "==> ステープル"
+xcrun stapler staple "$APP_ROOT"
+xcrun stapler validate "$APP_ROOT"
+spctl --assess --type execute "$APP_ROOT"
+
+echo ""
+echo "==> 完了: 署名・公証済み $APP_ROOT"
+echo "    配布物の再パッケージ: ./scripts/package-release.sh && ./scripts/create-dmg.sh"
+echo "    （公証後は zip/DMG を作り直して SHA-256 を更新する）"

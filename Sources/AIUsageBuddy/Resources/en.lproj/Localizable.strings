@@ -1,0 +1,162 @@
+/* AI Usage Buddy — English */
+
+"app.name" = "AI Usage Buddy";
+
+/* Limits */
+"limit.fiveHour" = "5-hour limit";
+"limit.weekly" = "Weekly limit";
+
+/* Character states */
+"character.state.energetic" = "Energetic";
+"character.state.normal" = "Normal";
+"character.state.tired" = "Tired";
+"character.state.sleeping" = "Sleeping";
+"character.state.unknown" = "Connection needed";
+
+/* Accounts */
+"account.default.name" = "Default Codex account";
+"account.unnamed" = "Unnamed account";
+
+/* Popover */
+"popover.account" = "Account";
+"popover.noAccount" = "No account registered. Add one in Settings.";
+"popover.noData" = "No data";
+"popover.resetUnknown" = "Reset time unknown";
+"popover.manualBadge" = "Manual";
+"popover.manualActive" = "Showing a manually corrected value (returns to official values on the next successful auto refresh)";
+"popover.staleWarning" = "Data is stale";
+"popover.lastFetched" = "Last fetched";
+"popover.refresh.help" = "Refresh now";
+"popover.openSettings" = "Settings…";
+"popover.quit" = "Quit";
+
+/* Settings */
+"settings.title" = "Settings";
+"settings.accounts" = "Accounts";
+"settings.addAccount" = "Add Account…";
+"settings.rename" = "Rename";
+"settings.delete" = "Delete account";
+"settings.accountName" = "Display name";
+"settings.login.waiting" = "Complete signing in to your ChatGPT account in the browser.";
+"settings.login.reopen" = "Reopen authorization page";
+"settings.login.cancel" = "Cancel";
+"settings.login.completing" = "Verifying login…";
+"settings.login.success" = "Added:";
+"settings.login.failed" = "Login failed";
+"settings.selectedAccount" = "Selected account";
+"settings.displayLimit" = "Menu bar limit";
+"settings.manual.hint" = "While auto refresh is failing, you can enter remaining % manually.";
+"settings.manual.clear" = "Clear";
+"settings.manual.apply" = "Apply manual correction";
+"settings.refreshNow" = "Refresh Now";
+"settings.refreshing" = "Refreshing…";
+"settings.notifications" = "Notifications";
+"settings.notificationsEnabled" = "Low-usage notifications";
+"settings.threshold" = "Threshold";
+"settings.notificationDenied" = "Notifications are not allowed. Enable them in System Settings.";
+"settings.openNotificationSettings" = "Open System Settings…";
+"settings.notificationsCommonNote" = "Notification settings are shared app-wide. Each account, limit, and threshold is notified once per reset window.";
+"settings.general" = "General";
+"settings.launchAtLogin" = "Launch at login";
+"settings.rerunOnboarding" = "Run first-time setup again…";
+"settings.language" = "Language";
+"settings.language.system" = "Follow System";
+"settings.language.japanese" = "日本語";
+"settings.language.english" = "English";
+"settings.refreshInterval" = "Auto refresh interval";
+"settings.about" = "About";
+"settings.about.version" = "Version";
+"settings.about.build" = "Build";
+"settings.about.source" = "Data source";
+"settings.about.sourceValue" = "Official Codex app-server (bundled with the ChatGPT app)";
+"settings.plan" = "Plan";
+
+/* Settings - shortcuts */
+"settings.shortcuts" = "Global shortcuts";
+"shortcut.name.showUsage" = "Show quick usage window";
+"shortcut.name.refresh" = "Refresh now";
+"shortcut.recording" = "Press keys…";
+"shortcut.disabled" = "Disabled";
+"shortcut.restoreDefaults" = "Restore defaults";
+"shortcut.note" = "Click and type a new key combination. Esc cancels, Delete disables.";
+"shortcut.error.duplicate" = "Both shortcuts use the same keys. Choose different keys.";
+"shortcut.error.missingKey" = "No key is assigned.";
+"shortcut.error.missingModifiers" = "A modifier key (⌘⌥⌃⇧) is required.";
+"shortcut.error.registrationFailed" = "Failed to register the shortcut (it may conflict with another app)";
+
+/* Settings - update */
+"settings.update" = "Update";
+"settings.update.automaticCheck" = "Check for updates automatically (once a day)";
+"settings.update.checkNow" = "Check Now…";
+"settings.update.checking" = "Checking…";
+"settings.update.upToDate" = "Up to date";
+"settings.update.available" = "A newer version is available";
+"settings.update.notConfigured" = "The update source (GitHub) is not configured yet — please check manually";
+"settings.update.failed" = "Check failed";
+"settings.update.openReleases" = "Open Releases page…";
+"settings.update.note" = "Until signing and notarization are in place, the app only checks and directs you to GitHub Releases (no automatic installation).";
+
+/* Menu bar context menu */
+"context.refreshNow" = "Refresh Now";
+"context.switchAccount" = "Switch Account";
+"context.rerunOnboarding" = "Run Setup Again…";
+"context.openSettings" = "Settings…";
+"context.checkForUpdates" = "Check for Updates…";
+"context.quit" = "Quit";
+
+/* Onboarding */
+"onboarding.window.title" = "AI Usage Buddy — Setup";
+"onboarding.skip" = "Skip";
+"onboarding.skip.hint" = "Skip setup and start using the app";
+"onboarding.back" = "Back";
+"onboarding.next" = "Next";
+"onboarding.finish" = "Get Started";
+"onboarding.step.0.title" = "Welcome";
+"onboarding.step.0.body" = "AI Usage Buddy shows the remaining Codex quota (5-hour and weekly limits) of your ChatGPT plan as a menu bar character.";
+"onboarding.welcome.bullet1" = "The menu bar character's face tells you roughly how much quota is left";
+"onboarding.welcome.bullet2" = "Click it to see percentages, reset times, and more";
+"onboarding.welcome.bullet3" = "You can start using it without connecting an account";
+"onboarding.step.1.title" = "Connect your account";
+"onboarding.step.1.body" = "Sign in with your ChatGPT account via the official OAuth flow to fetch your quota. Authentication happens in your browser.";
+"onboarding.connect.action" = "Connect Account…";
+"onboarding.connect.optional" = "You can skip this step and add accounts later in Settings.";
+"onboarding.step.2.title" = "Notification permission";
+"onboarding.step.2.body" = "Get notified when your remaining quota runs low. You can change this later in System Settings.";
+"onboarding.notifications.action" = "Allow Notifications…";
+"onboarding.notifications.done" = "Notification permission requested";
+"onboarding.notifications.optional" = "You can skip this step.";
+"onboarding.step.3.title" = "Launch at login";
+"onboarding.step.3.body" = "To start the app automatically when you log in, register it explicitly here.";
+"onboarding.loginItem.action" = "Enable automatic launch";
+"onboarding.loginItem.enabled" = "Automatic launch is enabled";
+"onboarding.loginItem.optional" = "Leave it off and continue if you prefer (you can change it later in Settings).";
+"onboarding.step.4.title" = "How to use";
+"onboarding.step.4.body" = "A quick look at the basics.";
+"onboarding.guide.bullet1" = "Click the character — quota details, manual refresh, settings";
+"onboarding.guide.bullet2" = "Right-click the character — refresh now, switch account, quit, and more";
+"onboarding.guide.bullet3" = "⌃⌥U opens the quick usage window, ⌃⌥R refreshes (configurable)";
+"onboarding.guide.bullet4" = "Notifications when quota drops below the thresholds (20% / 10% by default)";
+"onboarding.guide.bullet5" = "If fetching fails, the previous value is shown with a \"data is stale\" notice";
+
+/* Quick usage window */
+"quickusage.window.title" = "AI Usage Buddy — Usage";
+
+/* Error kinds */
+"error.kind.authenticationRequired.title" = "Re-login required";
+"error.kind.authenticationRequired.explanation" = "Your session with the official integration has expired. Reconnect the account in Settings.";
+"error.kind.officialIntegrationMissing.title" = "Official Codex integration not found";
+"error.kind.officialIntegrationMissing.explanation" = "The ChatGPT app (which bundles the Codex CLI) was not found or could not start. Check that the ChatGPT app is installed.";
+"error.kind.timeout.title" = "Response timed out";
+"error.kind.timeout.explanation" = "The official integration did not respond in time. Try again in a little while.";
+"error.kind.serverError.title" = "Server error";
+"error.kind.serverError.explanation" = "The official integration server returned an error. Please retry later.";
+"error.kind.invalidResponse.title" = "Unexpected response";
+"error.kind.invalidResponse.explanation" = "The official integration returned an unexpected response format. The ChatGPT app update may have changed the protocol.";
+"error.kind.processTerminated.title" = "Integration process terminated";
+"error.kind.processTerminated.explanation" = "The official integration process exited, so the quota could not be fetched. Retrying restarts it automatically.";
+"error.kind.stale.title" = "Data is stale";
+"error.kind.stale.explanation" = "Showing the last successfully fetched value. Retry to fetch the latest value.";
+"error.kind.other.title" = "Fetch failed";
+"error.kind.other.explanation" = "An unknown error occurred. If it persists, check Settings.";
+"error.action.retry" = "Retry";
+"error.action.openSettings" = "Settings…";
