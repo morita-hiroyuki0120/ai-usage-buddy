@@ -1,0 +1,331 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A30000000000000000000001 /* StoreNoticeLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000003; };
+		A30000000000000000000002 /* StoreNoticesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000004; };
+		A20000000000000000000001 /* codex-app-server in Embed Helper Tools */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002; settings = {ATTRIBUTES = (CodeSignOnCopy,); }; };
+		A20000000000000000000003 /* StoreNotices in Embed Store Notices */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004; };
+            A10000000000000000000019 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001A /* Assets.xcassets */; };
+		A1000000000000000000000D /* BundleModuleCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000C /* BundleModuleCompatibility.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A30000000000000000000003 /* StoreNoticeLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../Sources/AIUsageBuddy/Services/StoreNoticeLoader.swift; sourceTree = "<group>"; };
+		A30000000000000000000004 /* StoreNoticesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../Sources/AIUsageBuddy/Views/StoreNoticesView.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* staged codex-app-server */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = "StorePackaging/codex-app-server"; sourceTree = DERIVED_FILE_DIR; };
+		A20000000000000000000004 /* staged StoreNotices */ = {isa = PBXFileReference; lastKnownFileType = folder; path = StorePackaging/StoreNotices; sourceTree = DERIVED_FILE_DIR; };
+            A1000000000000000000001A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A10000000000000000000004 /* AI Usage Buddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "AI Usage Buddy.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000000000000000000000A /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A1000000000000000000000B /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A1000000000000000000000C /* BundleModuleCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleModuleCompatibility.swift; sourceTree = "<group>"; };
+		A10000000000000000000018 /* AIUsageBuddyStore.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIUsageBuddyStore.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A20000000000000000000005 /* Embed Helper Tools */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (A20000000000000000000001,);
+			name = "Embed Helper Tools";
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		A20000000000000000000006 /* Embed Store Notices */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (A20000000000000000000003,);
+			name = "Embed Store Notices";
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A20000000000000000000007 /* Preflight and Stage Store Archive */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ("$(SRCROOT)/../config/EmbeddedAppServer.json", "$(SRCROOT)/../scripts/prepare-store-archive.sh", "$(SRCROOT)/../Tools/StorePackaging/prepare.py", "$(SRCROOT)/../LICENSE", "$(AI_USAGE_BUDDY_STORE_INPUTS)",);
+			name = "Preflight and Stage Store Archive";
+			outputPaths = ("$(DERIVED_FILE_DIR)/StorePackaging",);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ \"$ACTION\" = install ]; then /bin/bash \"$SRCROOT/../scripts/prepare-store-archive.sh\" --stage-xcode; fi\n";
+		};
+		A20000000000000000000008 /* Verify Embedded Store Archive */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ("$(SRCROOT)/../config/EmbeddedAppServer.json", "$(SRCROOT)/../scripts/prepare-store-archive.sh", "$(SRCROOT)/../Tools/StorePackaging/prepare.py", "$(SRCROOT)/../LICENSE", "$(AI_USAGE_BUDDY_STORE_INPUTS)", "$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/codex-app-server", "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/StoreNotices", "$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",);
+			name = "Verify Embedded Store Archive";
+			outputPaths = ();
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/bash;
+			shellScript = "/bin/bash \"$SRCROOT/../scripts/prepare-store-archive.sh\" --verify-embedded\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A30000000000000000000005 /* Explicit notice sources */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (Services/StoreNoticeLoader.swift, Views/StoreNoticesView.swift,);
+			target = A10000000000000000000005 /* AIUsageBuddyStoreApp */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A10000000000000000000006 /* AIUsageBuddy Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (A30000000000000000000005 /* Explicit notice sources */,);
+			explicitFileTypes = {};
+			explicitFolders = ();
+			path = ../Sources/AIUsageBuddy;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000011 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				A30000000000000000000003 /* StoreNoticeLoader.swift */,
+				A30000000000000000000004 /* StoreNoticesView.swift */,
+				A20000000000000000000002 /* staged codex-app-server */,
+				A20000000000000000000004 /* staged StoreNotices */,
+				A10000000000000000000006 /* AIUsageBuddy Sources */,
+				A10000000000000000000008 /* Package Resources */,
+				A1000000000000000000000C /* BundleModuleCompatibility.swift */,
+				A10000000000000000000018 /* AIUsageBuddyStore.entitlements */,
+                    A1000000000000000000001A /* Assets.xcassets */,
+				A10000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000004 /* AI Usage Buddy.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000008 /* Package Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000009 /* Localizable.strings */,
+			);
+			path = ../Sources/AIUsageBuddy/Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000005 /* AIUsageBuddyStoreApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000013 /* Build configuration list for PBXNativeTarget "AIUsageBuddyStoreApp" */;
+			buildPhases = (
+				A20000000000000000000007 /* Preflight and Stage Store Archive */,
+				A1000000000000000000000F /* Sources */,
+				A10000000000000000000010 /* Resources */,
+				A10000000000000000000011 /* Frameworks */,
+				A20000000000000000000005 /* Embed Helper Tools */,
+				A20000000000000000000006 /* Embed Store Notices */,
+				A20000000000000000000008 /* Verify Embedded Store Archive */,
+			);
+			buildRules = ();
+			dependencies = ();
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000006 /* AIUsageBuddy Sources */,
+			);
+			name = AIUsageBuddyStoreApp;
+			productName = "AI Usage Buddy";
+			productReference = A10000000000000000000004 /* AI Usage Buddy.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					A10000000000000000000005 = {
+						CreatedOnToolsVersion = 27.0;
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = A10000000000000000000012 /* Build configuration list for PBXProject "AIUsageBuddyStore" */;
+			compatibilityVersion = "Xcode 16.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				ja,
+				Base,
+			);
+			mainGroup = A10000000000000000000002;
+			productRefGroup = A10000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000000000000000000005 /* AIUsageBuddyStoreApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000000000000000000010 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+                files = (A10000000000000000000019 /* Assets.xcassets in Resources */,);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1000000000000000000000F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A30000000000000000000001 /* StoreNoticeLoader.swift in Sources */,
+				A30000000000000000000002 /* StoreNoticesView.swift in Sources */,
+				A1000000000000000000000D /* BundleModuleCompatibility.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		A10000000000000000000009 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1000000000000000000000A /* en */,
+				A1000000000000000000000B /* ja */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		A10000000000000000000014 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		A10000000000000000000015 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		A10000000000000000000016 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AI_USAGE_BUDDY_DEVELOPMENT_SIGNING_IDENTITY = "";
+				AI_USAGE_BUDDY_STORE_INPUTS = "$(SRCROOT)/../config";
+				SKIP_INSTALL = NO;
+                ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ARCHS = arm64;
+				CODE_SIGN_ENTITLEMENTS = AIUsageBuddyStore.entitlements;
+				CODE_SIGN_IDENTITY = "$(AI_USAGE_BUDDY_DEVELOPMENT_SIGNING_IDENTITY)";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = 9HYDLV4RY2;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				CURRENT_PROJECT_VERSION = 2;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Usage Buddy";
+				INFOPLIST_KEY_LSUIElement = YES;
+				MARKETING_VERSION = 1.0.1;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aiusagebuddy.app.store;
+				PRODUCT_NAME = "AI Usage Buddy";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) AI_USAGE_BUDDY_APP_STORE";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A10000000000000000000017 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AI_USAGE_BUDDY_DISTRIBUTION_SIGNING_IDENTITY = "";
+				AI_USAGE_BUDDY_STORE_INPUTS = "$(SRCROOT)/../config";
+				SKIP_INSTALL = NO;
+                ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ARCHS = arm64;
+				CODE_SIGN_ENTITLEMENTS = AIUsageBuddyStore.entitlements;
+				CODE_SIGN_IDENTITY = "$(AI_USAGE_BUDDY_DISTRIBUTION_SIGNING_IDENTITY)";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = 9HYDLV4RY2;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				CURRENT_PROJECT_VERSION = 2;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Usage Buddy";
+				INFOPLIST_KEY_LSUIElement = YES;
+				MARKETING_VERSION = 1.0.1;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aiusagebuddy.app.store;
+				PRODUCT_NAME = "AI Usage Buddy";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) AI_USAGE_BUDDY_APP_STORE";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000000000000000000012 /* Build configuration list for PBXProject "AIUsageBuddyStore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000014 /* Debug */,
+				A10000000000000000000015 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000013 /* Build configuration list for PBXNativeTarget "AIUsageBuddyStoreApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000016 /* Debug */,
+				A10000000000000000000017 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A10000000000000000000001 /* Project object */;
+}

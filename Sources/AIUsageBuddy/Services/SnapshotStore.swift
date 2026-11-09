@@ -48,6 +48,16 @@ public final class SnapshotStore: @unchecked Sendable {
         return state.snapshots
     }
 
+    /// Discards cached usage data when a Store account is moved to an isolated home.
+    public func clearAccountData(accountID: UUID) {
+        lock.lock(); defer { lock.unlock() }
+        state.snapshots.removeValue(forKey: accountID)
+        let prefix = accountID.uuidString + "|"
+        state.manualOverrides = state.manualOverrides.filter { !$0.key.hasPrefix(prefix) }
+        state.notifiedKeys = state.notifiedKeys.filter { !$0.hasPrefix(prefix) }
+        persistLocked()
+    }
+
     /// 公式取得成功時に呼ぶ。手動補正を解除してスナップショットを更新する。
     public func storeOfficialSnapshot(_ snapshot: UsageSnapshot) {
         lock.lock()

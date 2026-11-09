@@ -63,6 +63,9 @@ ChatGPTアプリ同梱の `codex` バイナリを `app-server` モード（JSON-
 # テスト（要: 公式ツールチェーン → 下記「テスト環境」参照）
 ./scripts/run-tests.sh
 
+# リリーススクリプトのモック回帰（署名・公証は実行しない）
+bash ./scripts/test-release-scripts.sh
+
 # Apple Silicon向けReleaseビルド + .appバンドル生成
 ./scripts/build-app.sh
 # → build/AI Usage Buddy.app
@@ -103,7 +106,7 @@ open "build/AI Usage Buddy.app"
 ## リリースパッケージの作成
 
 ```bash
-# zip + SHA-256 + リリースノート（build/release/ へ出力）
+# .appをReleaseビルドし、zip + SHA-256 + リリースノートを作る
 ./scripts/package-release.sh
 #   → build/release/AIUsageBuddy-<version>-<build>-arm64.zip
 #   → build/release/SHA256SUMS.txt
@@ -112,11 +115,24 @@ open "build/AI Usage Buddy.app"
 # DMG（.app + Applicationsエイリアス + インストール案内）
 ./scripts/create-dmg.sh
 #   → build/release/AIUsageBuddy-<version>-<build>-arm64.dmg
+
+# Developer ID署名・公証・ステープル後は同じ.appを再利用して最終梱包
+./scripts/package-release.sh --reuse-app
+./scripts/create-dmg.sh --reuse-app
+
+# 公証プロファイルの準備前は、別ディレクトリでローカル署名だけ行う
+export AI_USAGE_BUDDY_RELEASE_DIR="$PWD/build/release-candidate-1.0.1-2"
+./scripts/package-release.sh
+./scripts/sign-and-notarize.sh.example --sign-only
 ```
 
-- どちらのスクリプトも既存の `build-app.sh` を再利用する（Apple Silicon arm64向けReleaseビルド）
+- 通常の `package-release.sh` はApple Silicon arm64向けReleaseビルドを行う。`--reuse-app` は既存.appを再ビルド・再署名せずに梱包する
+- `SHA256SUMS.txt` はその版で実在するZIPとDMGを梱包後の内容から集約する
+- Developer ID等で署名済みの.appは通常ビルドで上書きしない。署名後は必ず `--reuse-app` を指定する
+- `create-dmg.sh --reuse-app` は.appが無い場合に停止し、DMG完成後に既存DMGを置き換える
+- `AI_USAGE_BUDDY_RELEASE_DIR` を指定すると別のリリース出力先を使える。`--sign-only` は公証を行わず、成果物にも未公証・未ステープルと明記する
 - 成果物の検証: `cd build/release && shasum -a 256 -c SHA256SUMS.txt`
-- 出力に現在の署名状態を**明示**する。ad-hoc署名のままのビルドは「配布用のDeveloper ID署名ではありません・公証も未実施」と表示される
+- 出力に現在の署名状態を**明示**する。正式署名・公証済みの表示には署名・ステープル・Gatekeeper検証がすべて必要
 - ユーザー設定（`~/Library/Application Support/AIUsageBuddy/`）には触れない
 
 ## 署名・公証の手順（Apple Developer Program加入後）
@@ -133,34 +149,33 @@ export AI_USAGE_BUDDY_TEAM_ID="TEAMID"
 export AI_USAGE_BUDDY_NOTARY_PROFILE="notary-profile-name"
 export AI_USAGE_BUDDY_BUNDLE_ID="com.aiusagebuddy.app"
 
-# 公証プロファイルを事前にキーチェーンへ保存（Apple ID・パスワードを都度渡さない）
-xcrun notarytool store-credentials "notary-profile-name" \
-  --apple-id "you@example.com" --team-id "TEAMID" \
-  --password "app-specific-password"
+# 公証プロファイルをキーチェーンへ保存。続けて対話プロンプトへパスワードを入力する
+xcrun notarytool store-credentials "notary-profile-name" --apple-id "you@example.com" --team-id "TEAMID"
 
-./scripts/package-release.sh   # .app + zip を先に用意
-./scripts/sign-and-notarize.sh # 署名 → 公証 → ステープル
-./scripts/package-release.sh && ./scripts/create-dmg.sh  # 公証後に配布物を作り直す
+./scripts/package-release.sh   # ad-hoc署名の.app + zipを用意
+./scripts/sign-and-notarize.sh # Developer ID署名 → 公証Accepted確認 → ステープル → 最終zip/DMG
 ```
 
 スクリプトの内容:
 
 1. **環境変数の確認** — 1つでも不足していれば署名も公証も行わず、不足項目を表示して停止する
-2. **Developer ID Application署名** — `codesign --force --deep --options runtime --sign "$IDENTITY"`（Hardened Runtime有効）
-3. **公証** — `xcrun notarytool submit --keychain-profile` で提出（`--wait` 付き）
-4. **ステープル** — `xcrun stapler staple` + `validate` + `spctl --assess`
+2. **証明書の確認** — Developer ID Applicationだけを受け付け、Team IDが指定値と一致しなければ停止する。Apple Development証明書は拒否する
+3. **構造とBundle IDの確認** — 現在の単一実行ファイル構成を検証し、ネスト実行コードやBundle ID不一致で停止する
+4. **署名** — Hardened Runtimeとsecure timestampを有効にする。一致する既存署名は再署名せず再利用する
+5. **公証** — `notarytool submit --wait` の結果が `Accepted` の場合だけ続行する
+6. **ステープル** — `stapler validate`・`spctl --assess`・署名検証を行う
+7. **最終梱包** — 署名済み.appを再ビルドせずzip/DMGを作り、両方のSHA-256を最終状態から更新する
 
 手順の全体像:
 
 | 手順 | コマンド | 備考 |
 |---|---|---|
 | 1. 証明書 | Developer ID Application証明書をキーチェーンへインポート | Apple Developerサイトで発行 |
-| 2. 公証プロファイル | `xcrun notarytool store-credentials` | Apple ID・app-specific passwordはキーチェーンへ保存 only |
+| 2. 公証プロファイル | `xcrun notarytool store-credentials` | パスワードは対話入力し、キーチェーンへ保存 |
 | 3. ビルド | `./scripts/package-release.sh` | arm64 Release + ad-hoc署名の状態 |
-| 4. 署名 | `./scripts/sign-and-notarize.sh` | Hardened Runtime + Developer ID |
-| 5. 公証 | （同上スクリプト内） | notarytool + wait |
-| 6. ステープル | （同上スクリプト内） | stapler validate |
-| 7. 再パッケージ | `./scripts/package-release.sh && ./scripts/create-dmg.sh` | 公証済みzip/DMGとSHA-256を作り直す |
+| 4. 署名・公証 | `./scripts/sign-and-notarize.sh` | Developer ID + Hardened Runtime + timestamp。Accepted必須 |
+| 5. ステープル・検証 | （同上スクリプト内） | stapler validate + spctl + codesign |
+| 6. 最終パッケージ | （同上スクリプト内） | 既存.appを再利用してzip/DMGとSHA-256を生成 |
 
 SMAppServiceによるログイン時自動起動は、正式署名済みで `/Applications` 等の安定した場所に配置した場合に最も確実に動作する。
 
@@ -243,13 +258,14 @@ SMAppServiceによるログイン時自動起動は、正式署名済みで `/Ap
 
 - [ ] `./scripts/run-tests.sh` — 全テスト合格
 - [ ] `./scripts/build-app.sh` — 成功・警告ゼロ・`LSUIElement = true` と表示される
-- [ ] `./scripts/package-release.sh` — zip + SHA256SUMS.txt 生成・署名状態が「ad-hoc（配布用署名ではない）」と**明示**されているか（未署名のまま公開しない場合はその旨をリリースノートへ明記）
+- [ ] `./scripts/package-release.sh` — zip + SHA256SUMS.txt生成。Developer IDなしならad-hoc/未署名と明示されている
 - [ ] `./scripts/create-dmg.sh` — DMG生成（.app + Applicationsエイリアス + 案内）
+- [ ] Developer ID署名後は `--reuse-app` で最終梱包し、通常ビルドで署名済み.appを上書きしていない
 - [ ] `cd build/release && shasum -a 256 -c SHA256SUMS.txt` — チェックサム検証
 - [ ] DMGをマウントして `.app` が起動する・Applicationsへドラッグできることを確認
 - [ ] `config/ReleaseConfig.xcconfig` の `APP_MARKETING_VERSION` / `APP_BUILD_NUMBER` を更新した
 - [ ] リポジトリ公開済みなら `GITHUB_OWNER` を設定した（未設定なら更新確認が無効＝手動モードであることをリリースノートに明記）
-- [ ] Apple Developer Program加入済みなら `sign-and-notarize.sh` で署名・公証・ステープルを行い、**公証後に** zip/DMGを作り直した
+- [ ] Apple Developer Program加入済みならDeveloper ID Applicationで署名し、公証Accepted・ステープル・Gatekeeper検証を確認した
 - [ ] 秘密情報（Apple ID・Team ID・証明書・EdDSA秘密鍵・パスワード）がコード・README・スクリプト・Gitに含まれていない
 - [ ] GitHub Release に zip・DMG・SHA256SUMS.txt を添付し、タグ `v<version>` を打った
 

@@ -32,6 +32,12 @@ public enum UpdateProviderError: Error, Equatable, Sendable {
     case invalidResponse
 }
 
+private struct StoreDisabledUpdateProvider: UpdateProviding {
+    func fetchLatestRelease() async throws -> UpdateRelease {
+        throw UpdateProviderError.notConfigured
+    }
+}
+
 // MARK: - Provider protocol
 
 /// 更新情報の取得元の抽象。将来は GitHub Releases + Sparkle 2 (Appcast / EdDSA署名) に
@@ -220,6 +226,8 @@ public final class UpdateService: ObservableObject {
         case requiresUserConfirmation(version: String, pageURL: URL?)
         /// 現段階の正式な導線: GitHub Releases の手動ダウンロード。
         case manualDownload(pageURL: URL?)
+        /// Mac App Storeが更新を管理する。
+        case managedByAppStore
     }
 
     @Published public private(set) var outcome: Outcome = .idle
@@ -228,6 +236,7 @@ public final class UpdateService: ObservableObject {
     private let provider: UpdateProviding
     private let defaults: UserDefaults
     private let now: () -> Date
+    private let distributionChannel: DistributionChannel
 
     /// - Parameters:
     ///   - provider: 省略時は ReleaseConfiguration（Info.plist）から組み立てた
@@ -237,19 +246,29 @@ public final class UpdateService: ObservableObject {
         provider: UpdateProviding? = nil,
         defaults: UserDefaults = .standard,
         currentVersion: String? = nil,
-        now: @escaping () -> Date = Date.init
+        now: @escaping () -> Date = Date.init,
+        distributionChannel: DistributionChannel = .current
     ) {
-        let configuration = ReleaseConfiguration.from()
-        self.provider = provider ?? GitHubReleasesProvider(configuration: configuration)
+        let configuration = distributionChannel.isAppStore ? nil : ReleaseConfiguration.from()
+        if let provider {
+            self.provider = provider
+        } else if let configuration {
+            self.provider = GitHubReleasesProvider(configuration: configuration)
+        } else {
+            self.provider = StoreDisabledUpdateProvider()
+        }
         self.defaults = defaults
-        self.currentVersion = currentVersion ?? configuration.appVersion
+        self.currentVersion = currentVersion
+            ?? configuration?.appVersion
+            ?? (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0")
         self.now = now
+        self.distributionChannel = distributionChannel
     }
 
     /// 前回の確認から24時間経っていなければ確認しない（自動確認用）。
     /// 設定で自動確認がオフなら何もしない。
     public func automaticCheckIfNeeded(enabled: Bool) async {
-        guard enabled else { return }
+        guard !distributionChannel.isAppStore, enabled else { return }
         if let last = defaults.object(forKey: Self.lastCheckKey) as? Date,
            now().timeIntervalSince(last) < Self.automaticCheckInterval {
             return
@@ -259,6 +278,7 @@ public final class UpdateService: ObservableObject {
 
     /// 即時確認（手動・自動共通の本体）。確認を試みた時刻を記録する。
     public func checkNow() async {
+        guard !distributionChannel.isAppStore else { return }
         outcome = .checking
         defaults.set(now(), forKey: Self.lastCheckKey)
 
@@ -286,6 +306,7 @@ public final class UpdateService: ObservableObject {
         userConfirmed: Bool,
         eligibility: AutoUpdateEligibility? = nil
     ) -> InstallDecision {
+        guard !distributionChannel.isAppStore else { return .managedByAppStore }
         switch eligibility ?? AutoUpdateEligibility.evaluate() {
         case .manualOnly(let reason):
             return .suppressed(reason: reason)
@@ -326,6 +347,7 @@ public final class UpdateService: ObservableObject {
     /// リリースページを既定のブラウザで開く（手動ダウンロード案内）。
     @discardableResult
     public func openReleasePage() -> Bool {
+        guard !distributionChannel.isAppStore else { return false }
         if case .available(_, let url) = outcome, let url {
             NSWorkspace.shared.open(url)
             return true

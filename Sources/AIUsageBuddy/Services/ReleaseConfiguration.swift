@@ -7,6 +7,11 @@ import Foundation
 /// 秘密情報は含まない（所有者名・リポジトリ名・URL・バージョン番号のみ）。
 public struct ReleaseConfiguration: Equatable, Sendable {
 
+    /// Approved public support destination; independent of updater configuration.
+    public static let storeSupportURL: URL? = URL(
+        string: "https://github.com/morita-hiroyuki0120/ai-usage-buddy/issues"
+    )
+
     /// GitHub所有者。未設定（空・プレースホルダー）は `nil`。
     /// 未設定の間は更新確認の通信を行わない（手動更新モード）。
     public let githubOwner: String?

@@ -244,7 +244,7 @@ public enum UsageErrorKind: String, Codable, CaseIterable, Sendable {
         switch error {
         case CodexClientError.authenticationRequired:
             return .authenticationRequired
-        case CodexClientError.binaryNotFound, CodexClientError.launchFailed:
+        case CodexClientError.binaryNotFound, CodexClientError.storeHelperMissing, CodexClientError.storeHomeInvalid, CodexClientError.launchFailed:
             return .officialIntegrationMissing
         case CodexClientError.timeout:
             return .timeout

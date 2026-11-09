@@ -2,8 +2,8 @@
 // テンプレート: config/ReleaseConfig.example.xcconfig
 // 秘密情報は書かない（所有者名・リポジトリ名・URL・バージョンのみ）。
 
-APP_MARKETING_VERSION = 1.0.0
-APP_BUILD_NUMBER = 1
+APP_MARKETING_VERSION = 1.0.1
+APP_BUILD_NUMBER = 2
 
 // GitHub Releases の公開先（https://github.com/morita-hiroyuki0120/ai-usage-buddy）
 // 空にすると更新確認なし（手動更新モード）

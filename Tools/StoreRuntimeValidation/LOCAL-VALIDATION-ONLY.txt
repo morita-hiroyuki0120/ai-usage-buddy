@@ -1,0 +1,4 @@
+This artifact is for local App Sandbox/runtime validation only.
+
+It is not a Mac App Store submission candidate and must not be distributed.
+The transitive dependency license and notice review is incomplete.

@@ -1,0 +1,34 @@
+{
+  "component": "codex-app-server",
+  "version": "0.163.0",
+  "tag": "rust-v0.163.0",
+  "sourceCommit": "83086188ae0614bd882818ff1aa23f3194962012",
+  "officialReleaseAPI": "https://api.github.com/repos/openai/codex/releases/tags/rust-v0.163.0",
+  "artifact": {
+    "name": "codex-app-server-aarch64-apple-darwin.tar.gz",
+    "url": "https://github.com/openai/codex/releases/download/rust-v0.163.0/codex-app-server-aarch64-apple-darwin.tar.gz",
+    "sha256": "8165de84cc8e436d46d5e52fe6b68de053ba729c543e6310a1bd41e881cf4c37",
+    "architecture": "arm64",
+    "minimumOS": "macOS 11"
+  },
+  "sourceLicense": "Apache-2.0",
+  "runtimePolicy": {
+    "status": "implemented-not-runtime-verified",
+    "configOverrides": [
+      "cli_auth_credentials_store=\"keyring\"",
+      "features.secret_auth_storage=false",
+      "features.plugins=false",
+      "analytics.enabled=false",
+      "otel.exporter=\"none\"",
+      "otel.trace_exporter=\"none\"",
+      "otel.metrics_exporter=\"none\""
+    ],
+    "caveat": "analytics.enabled=false alone does not disable custom OTLP metrics"
+  },
+  "noticeAudit": "pending",
+  "transitiveLicenseAudit": "pending",
+  "telemetryAudit": "incomplete",
+  "mcpStartupAudit": "incomplete",
+  "analyticsEventsClientAudit": "incomplete",
+  "distributionStatus": "not-ready"
+}

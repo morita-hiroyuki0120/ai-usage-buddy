@@ -136,8 +136,11 @@ struct MenuBarContextMenuTests {
         let before = env.provider.fetchCallCount
 
         env.model.handleMenuBarContextAction(.refreshNow)
-        // 非同期Taskの完了を待つ
-        try? await Task.sleep(nanoseconds: 300_000_000)
+        // 並列suite実行時もMainActor上の更新Task完了を待つ。
+        let deadline = Date().addingTimeInterval(2)
+        while env.provider.fetchCallCount == before, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
 
         #expect(env.provider.fetchCallCount > before)
     }

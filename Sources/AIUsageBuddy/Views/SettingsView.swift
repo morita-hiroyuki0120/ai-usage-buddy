@@ -29,6 +29,9 @@ struct SettingsView: View {
     @State private var renameText = ""
     @State private var manualFiveHour = ""
     @State private var manualWeekly = ""
+    #if AI_USAGE_BUDDY_APP_STORE
+    @State private var showsStoreNotices = false
+    #endif
 
     var body: some View {
         Form {
@@ -39,8 +42,10 @@ struct SettingsView: View {
             notificationSection
             Divider()
             shortcutSection
-            Divider()
-            updateSection
+            if !model.distributionChannel.isAppStore {
+                Divider()
+                updateSection
+            }
             Divider()
             generalSection
             Divider()
@@ -48,6 +53,9 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 560, height: 760)
+        #if AI_USAGE_BUDDY_APP_STORE
+        .sheet(isPresented: $showsStoreNotices) { StoreNoticesView() }
+        #endif
     }
 
     // MARK: - Accounts
@@ -56,6 +64,12 @@ struct SettingsView: View {
         Section(L("settings.accounts")) {
             ForEach(model.accounts) { account in
                 accountRow(account)
+            }
+
+            if let deletionError = model.accountDeletionErrorMessage {
+                Label(deletionError, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
             }
 
             loginFlowView
@@ -130,11 +144,6 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(L("settings.login.waiting"))
                     .font(.callout)
-                Text(authURL)
-                    .font(.caption2)
-                    .foregroundStyle(.blue)
-                    .lineLimit(2)
-                    .truncationMode(.middle)
                 HStack {
                     Button(L("settings.login.reopen")) {
                         if let url = URL(string: authURL) { NSWorkspace.shared.open(url) }
@@ -452,6 +461,16 @@ struct SettingsView: View {
                 LabeledContent(L("settings.about.build"), value: release.buildNumber)
             }
             LabeledContent(L("settings.about.source"), value: L("settings.about.sourceValue"))
+            #if AI_USAGE_BUDDY_APP_STORE
+            if model.distributionChannel.isAppStore {
+                Button(L("settings.notices.title")) { showsStoreNotices = true }
+                    .accessibilityHint(L("settings.notices.hint"))
+                if let supportURL = ReleaseConfiguration.storeSupportURL {
+                    Link(L("settings.about.support"), destination: supportURL)
+                        .accessibilityHint(L("settings.about.supportHint"))
+                }
+            }
+            #endif
             if let completed = model.lastRefreshCompletedAt {
                 LabeledContent(L("popover.lastFetched"), value: UsageFormatter.fetchedDateTime(completed))
             }

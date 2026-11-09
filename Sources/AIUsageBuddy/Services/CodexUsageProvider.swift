@@ -33,25 +33,43 @@ public struct GetAccountRateLimitsResponse: Decodable, Sendable {
 
 // MARK: - Provider
 
+/// Returns only after logout and cleanup of the owned helper have completed.
+protocol AccountLogoutProviding: Sendable {
+    func logoutAndStop(for account: Account) async throws
+}
+
 /// UsageProvider の公式Codex実装。アカウントごとに codex app-server をspawnして利用枠を取得する。
-public final class CodexUsageProvider: @unchecked Sendable, UsageProvider {
+public final class CodexUsageProvider: @unchecked Sendable, UsageProvider, AccountLogoutProviding {
 
     public static let shared = CodexUsageProvider()
 
     private let logger = AppLogger(category: "CodexUsageProvider")
+    private let distributionChannel: DistributionChannel
+    private let accountStore: AccountStore
     /// アカウントごとの長寿命クライアント（プロセス再利用のため）。
     private let cache = ClientCache()
 
-    public init() {}
+    public init(
+        distributionChannel: DistributionChannel = .current,
+        accountStore: AccountStore = .shared
+    ) {
+        self.distributionChannel = distributionChannel
+        self.accountStore = accountStore
+    }
 
     public func accounts() async throws -> [Account] {
-        try AccountStore.shared.loadAccounts()
+        try accountStore.loadAccounts()
     }
 
     /// アカウントに対応する起動済みクライアントを取得する（なければ起動する）。
     public func runningClient(for account: Account) async throws -> CodexAppServerClient {
-        let home = account.homeKind == .managed ? AccountStore.shared.managedHomeURL(for: account.id) : nil
-        return try await cache.runningClient(for: account.id, codexHome: home)
+        let home = try codexHome(for: account)
+        return try await cache.runningClient(
+            for: account.id,
+            codexHome: home,
+            distributionChannel: distributionChannel,
+            containerDirectory: accountStore.containerDirectory
+        )
     }
 
     public func fetchSnapshot(for account: Account) async throws -> UsageSnapshot {
@@ -71,8 +89,20 @@ public final class CodexUsageProvider: @unchecked Sendable, UsageProvider {
             // プロセスが死んでいた場合は再起動して1回だけリトライ
             if !(await client.isAlive()) {
                 logger.info("app-server died; restarting for retry")
-                try await cache.restartClient(for: account.id, codexHome: account.resolvedCodexHome)
-                let fresh = try await cache.runningClient(for: account.id, codexHome: account.resolvedCodexHome)
+                let home = try codexHome(for: account)
+                try await cache.restartClient(
+                    for: account.id,
+                    codexHome: home,
+                    distributionChannel: distributionChannel,
+                    containerDirectory: accountStore.containerDirectory,
+                    expectedClient: distributionChannel.isAppStore ? client : nil
+                )
+                let fresh = try await cache.runningClient(
+                    for: account.id,
+                    codexHome: home,
+                    distributionChannel: distributionChannel,
+                    containerDirectory: accountStore.containerDirectory
+                )
                 limits = try await fresh.readRateLimits()
             } else {
                 throw error
@@ -116,9 +146,32 @@ public final class CodexUsageProvider: @unchecked Sendable, UsageProvider {
         return updated
     }
 
-    /// アカウントのクライアントを破棄する（アカウント削除時）。
+    func logoutAndStop(for account: Account) async throws {
+        guard distributionChannel.isAppStore, account.homeKind == .managed else {
+            throw CodexClientError.storeHomeInvalid
+        }
+        let home = try codexHome(for: account)
+        try await cache.logoutAndStop(
+            for: account.id,
+            codexHome: home,
+            containerDirectory: accountStore.containerDirectory
+        )
+    }
+
+    /// アカウントのクライアントを破棄する（Direct版ではlogoutを送らない）。
     public func discardClient(for accountID: UUID) async {
         await cache.discardClient(for: accountID)
+    }
+
+    public func stopAll() async {
+        await cache.stopAll()
+    }
+
+    private func codexHome(for account: Account) throws -> URL? {
+        if distributionChannel.isAppStore && account.homeKind != .managed {
+            throw CodexClientError.storeHomeInvalid
+        }
+        return account.homeKind == .managed ? accountStore.managedHomeURL(for: account.id) : nil
     }
 }
 
@@ -131,35 +184,241 @@ extension Account {
 
 /// アカウントごとのクライアントキャッシュ。
 actor ClientCache {
-    private var clients: [UUID: CodexAppServerClient] = [:]
-
-    func runningClient(for id: UUID, codexHome: URL?) async throws -> CodexAppServerClient {
-        if let existing = clients[id] {
-            if await existing.isAlive() {
-                return existing
-            }
-            await existing.stop()
-            clients[id] = nil
-        }
-        let client = CodexAppServerClient(codexHome: codexHome)
-        try await client.start()
-        clients[id] = client
-        return client
+    private struct StartingClient {
+        let client: CodexAppServerClient
+        let task: Task<Void, Error>
+        let generation: UInt64
     }
 
-    func restartClient(for id: UUID, codexHome: URL?) async throws {
+    private var clients: [UUID: CodexAppServerClient] = [:]
+    private var startingClients: [UUID: StartingClient] = [:]
+    private var generations: [UUID: UInt64] = [:]
+    private var deletionOwners: [UUID: UUID] = [:]
+    private var loggedOutAccountIDs: Set<UUID> = []
+    private var isShuttingDown = false
+
+    func runningClient(
+        for id: UUID,
+        codexHome: URL?,
+        distributionChannel: DistributionChannel = .current,
+        containerDirectory: URL? = nil,
+        bundleURL: URL = Bundle.main.bundleURL,
+        deletionOwner: UUID? = nil
+    ) async throws -> CodexAppServerClient {
+        try checkAccess(for: id, deletionOwner: deletionOwner)
+        let requestGeneration = generations[id, default: 0]
+
         if let existing = clients[id] {
-            await existing.stop()
-            clients[id] = nil
+            if await existing.isAlive() {
+                try checkAccess(for: id, deletionOwner: deletionOwner)
+                guard generations[id, default: 0] == requestGeneration else {
+                    throw CodexClientError.terminated
+                }
+                if clients[id] === existing { return existing }
+            } else {
+                if clients[id] === existing {
+                    clients[id] = nil
+                }
+                await existing.stop()
+            }
         }
-        let client = CodexAppServerClient(codexHome: codexHome)
-        try await client.start()
-        clients[id] = client
+
+        try checkAccess(for: id, deletionOwner: deletionOwner)
+        guard generations[id, default: 0] == requestGeneration else {
+            throw CodexClientError.terminated
+        }
+        if let starting = startingClients[id] {
+            return try await awaitAndInstall(starting, for: id)
+        }
+
+        let generation = advanceGeneration(for: id)
+        let client = CodexAppServerClient(
+            codexHome: codexHome,
+            distributionChannel: distributionChannel,
+            bundleURL: bundleURL,
+            accountID: id,
+            containerDirectory: containerDirectory
+        )
+        let task = Task<Void, Error> {
+            try Task.checkCancellation()
+            try await client.start()
+        }
+        let starting = StartingClient(client: client, task: task, generation: generation)
+        startingClients[id] = starting
+        return try await awaitAndInstall(starting, for: id)
+    }
+
+    func restartClient(
+        for id: UUID,
+        codexHome: URL?,
+        distributionChannel: DistributionChannel = .current,
+        containerDirectory: URL? = nil,
+        bundleURL: URL = Bundle.main.bundleURL,
+        expectedClient: CodexAppServerClient? = nil
+    ) async throws {
+        try checkAccess(for: id)
+        if let expectedClient, clients[id] !== expectedClient {
+            throw CodexClientError.terminated
+        }
+        let discardedGeneration = generations[id, default: 0] &+ 1
+        await discardClient(for: id)
+        if expectedClient != nil, generations[id] != discardedGeneration {
+            throw CodexClientError.terminated
+        }
+        _ = try await runningClient(
+            for: id,
+            codexHome: codexHome,
+            distributionChannel: distributionChannel,
+            containerDirectory: containerDirectory,
+            bundleURL: bundleURL
+        )
+    }
+
+    /// Reserves this account across awaits; stale fetches cannot restart its helper.
+    func logoutAndStop(
+        for id: UUID,
+        codexHome: URL?,
+        containerDirectory: URL,
+        bundleURL: URL = Bundle.main.bundleURL
+    ) async throws {
+        guard !isShuttingDown, deletionOwners[id] == nil else {
+            throw CodexClientError.terminated
+        }
+        let owner = UUID()
+        deletionOwners[id] = owner
+        defer {
+            if deletionOwners[id] == owner { deletionOwners[id] = nil }
+        }
+        let client = try await runningClient(
+            for: id,
+            codexHome: codexHome,
+            distributionChannel: .appStore,
+            containerDirectory: containerDirectory,
+            bundleURL: bundleURL,
+            deletionOwner: owner
+        )
+        do {
+            try Task.checkCancellation()
+            try await client.logout()
+            try Task.checkCancellation()
+            guard deletionOwners[id] == owner, !isShuttingDown, clients[id] === client else {
+                throw CodexClientError.terminated
+            }
+            // Keep stale callers blocked after success, even if local deletion later fails.
+            // An explicit deletion retry may acquire a new owned logout session.
+            loggedOutAccountIDs.insert(id)
+        } catch {
+            try await discardOwnedClient(client, for: id)
+            throw error
+        }
+        try await discardOwnedClient(client, for: id)
+    }
+
+    private func checkAccess(for id: UUID, deletionOwner: UUID? = nil) throws {
+        guard !isShuttingDown,
+              deletionOwners[id] == nil || deletionOwners[id] == deletionOwner,
+              !loggedOutAccountIDs.contains(id) || deletionOwner != nil else {
+            throw CodexClientError.terminated
+        }
+    }
+
+    private func discardOwnedClient(_ client: CodexAppServerClient, for id: UUID) async throws {
+        // Unstructured cleanup does not inherit the caller's cancellation.
+        // Await it so cancellation cannot skip the helper's exit wait.
+        await Task { await client.stop() }.value
+        guard !(await client.isAlive()) else {
+            // Keep ownership for a later explicit retry/stopAll; do not delete the home.
+            loggedOutAccountIDs.insert(id)
+            throw CodexClientError.terminated
+        }
+        if clients[id] === client {
+            clients[id] = nil
+            _ = advanceGeneration(for: id)
+        }
+        if startingClients[id]?.client === client {
+            startingClients.removeValue(forKey: id)?.task.cancel()
+        }
     }
 
     func discardClient(for id: UUID) async {
-        if let existing = clients.removeValue(forKey: id) {
+        _ = advanceGeneration(for: id)
+        let starting = startingClients.removeValue(forKey: id)
+        let existing = clients.removeValue(forKey: id)
+        starting?.task.cancel()
+
+        if let starting {
+            await starting.client.stop()
+        }
+        if let existing, existing !== starting?.client {
             await existing.stop()
         }
+    }
+
+    func stopAll() async {
+        isShuttingDown = true
+        let accountIDs = Set(clients.keys).union(startingClients.keys)
+        for id in accountIDs {
+            _ = advanceGeneration(for: id)
+        }
+        let starting = Array(startingClients.values)
+        let active = Array(clients.values)
+        startingClients.removeAll()
+        clients.removeAll()
+        for item in starting {
+            item.task.cancel()
+        }
+
+        var uniqueClients: [CodexAppServerClient] = []
+        var seen = Set<ObjectIdentifier>()
+        for client in starting.map(\.client) + active where seen.insert(ObjectIdentifier(client)).inserted {
+            uniqueClients.append(client)
+        }
+        await withTaskGroup(of: Void.self) { group in
+            for client in uniqueClients {
+                group.addTask { await client.stop() }
+            }
+        }
+    }
+
+    private func awaitAndInstall(
+        _ starting: StartingClient,
+        for id: UUID
+    ) async throws -> CodexAppServerClient {
+        do {
+            try await starting.task.value
+        } catch {
+            if startingClients[id]?.generation == starting.generation {
+                startingClients[id] = nil
+            }
+            await starting.client.stop()
+            throw error
+        }
+
+        guard generations[id] == starting.generation, !isShuttingDown else {
+            await starting.client.stop()
+            throw CodexClientError.terminated
+        }
+        if let installed = clients[id] {
+            guard installed === starting.client else {
+                await starting.client.stop()
+                throw CodexClientError.terminated
+            }
+            if startingClients[id]?.generation == starting.generation {
+                startingClients[id] = nil
+            }
+            return installed
+        }
+
+        clients[id] = starting.client
+        if startingClients[id]?.generation == starting.generation {
+            startingClients[id] = nil
+        }
+        return starting.client
+    }
+
+    private func advanceGeneration(for id: UUID) -> UInt64 {
+        let generation = (generations[id] ?? 0) &+ 1
+        generations[id] = generation
+        return generation
     }
 }

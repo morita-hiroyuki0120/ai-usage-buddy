@@ -2,8 +2,40 @@ import Foundation
 import UserNotifications
 @testable import AIUsageBuddy
 
+actor AsyncTestGate {
+    private var arrived = false
+    private var released = false
+    private var arrivalContinuation: CheckedContinuation<Void, Never>?
+    private var releaseContinuation: CheckedContinuation<Void, Never>?
+
+    func pause() async {
+        arrived = true
+        arrivalContinuation?.resume()
+        arrivalContinuation = nil
+        guard !released else { return }
+        await withCheckedContinuation { continuation in
+            if released {
+                continuation.resume()
+            } else {
+                releaseContinuation = continuation
+            }
+        }
+    }
+
+    func waitForArrival() async {
+        guard !arrived else { return }
+        await withCheckedContinuation { arrivalContinuation = $0 }
+    }
+
+    func release() {
+        released = true
+        releaseContinuation?.resume()
+        releaseContinuation = nil
+    }
+}
+
 /// ライブデータに依存しないテスト用 UsageProvider。
-final class MockUsageProvider: UsageProvider, @unchecked Sendable {
+final class MockUsageProvider: UsageProvider, AccountLogoutProviding, @unchecked Sendable {
 
     private let lock = NSLock()
     private var _accounts: [Account] = []
@@ -11,8 +43,31 @@ final class MockUsageProvider: UsageProvider, @unchecked Sendable {
     private var _accountInfos: [UUID: Account] = [:]
     private var _fetchError: Error?
     private var _accountsError: Error?
+    private var _accountsGate: AsyncTestGate?
+    private var _snapshotGate: AsyncTestGate?
+    private var _logoutHandler: (@Sendable (Account) async throws -> Void)?
+    private var _logoutCallCount = 0
 
-    var fetchCallCount = 0
+    var logoutCallCount: Int { synchronized { _logoutCallCount } }
+
+    func setLogoutHandler(_ handler: @escaping @Sendable (Account) async throws -> Void) {
+        synchronized { _logoutHandler = handler }
+    }
+
+    func logoutAndStop(for account: Account) async throws {
+        let handler = synchronized {
+            _logoutCallCount += 1
+            return _logoutHandler
+        }
+        guard let handler else { throw CodexClientError.storeHelperMissing }
+        try await handler(account)
+    }
+
+    private var _fetchCallCount = 0
+
+    var fetchCallCount: Int {
+        synchronized { _fetchCallCount }
+    }
 
     /// 非同期コンテキストからNSLockを直接触らないための同期ヘルパ。
     private func synchronized<T>(_ body: () -> T) -> T {
@@ -44,19 +99,28 @@ final class MockUsageProvider: UsageProvider, @unchecked Sendable {
         synchronized { _fetchError = error }
     }
 
+    func setAccountsGate(_ gate: AsyncTestGate?) {
+        synchronized { _accountsGate = gate }
+    }
+
+    func setSnapshotGate(_ gate: AsyncTestGate?) {
+        synchronized { _snapshotGate = gate }
+    }
+
     func accounts() async throws -> [Account] {
-        try synchronizedThrows {
-            if let _accountsError { throw _accountsError }
-            return _accounts
-        }
+        let (error, accounts, gate) = synchronized { (_accountsError, _accounts, _accountsGate) }
+        if let gate { await gate.pause() }
+        if let error { throw error }
+        return accounts
     }
 
     func fetchSnapshot(for account: Account) async throws -> UsageSnapshot {
-        let (error, snapshot): (Error?, UsageSnapshot?) = synchronized {
-            fetchCallCount += 1
-            return (_fetchError, _snapshots[account.id])
+        let (error, snapshot, gate): (Error?, UsageSnapshot?, AsyncTestGate?) = synchronized {
+            _fetchCallCount += 1
+            return (_fetchError, _snapshots[account.id], _snapshotGate)
         }
 
+        if let gate { await gate.pause() }
         if let error { throw error }
         guard let snapshot else {
             throw CodexClientError.invalidResponse("no snapshot configured for \(account.id)")
@@ -241,23 +305,40 @@ enum TestEnvironment {
     /// 既存テストと同じ挙動: 自動アカウント作成なし・既存ユーザー扱い。
     static func make(
         accounts: [Account] = [],
-        snapshots: [UsageSnapshot] = []
+        snapshots: [UsageSnapshot] = [],
+        distributionChannel: DistributionChannel = .direct,
+        codexBundleURL: URL = Bundle.main.bundleURL
     ) -> TestEnv {
-        makeInternal(accounts: accounts, snapshots: snapshots, preCreateMarkerFile: !accounts.isEmpty)
+        makeInternal(
+            accounts: accounts,
+            snapshots: snapshots,
+            preCreateMarkerFile: !accounts.isEmpty,
+            distributionChannel: distributionChannel,
+            codexBundleURL: codexBundleURL
+        )
     }
 
     /// 新規インストール相当（永続化ファイルが一切無い状態から開始）の環境を作る。
     static func makeFreshInstall(
         accounts: [Account] = [],
-        snapshots: [UsageSnapshot] = []
+        snapshots: [UsageSnapshot] = [],
+        distributionChannel: DistributionChannel = .direct
     ) -> TestEnv {
-        makeInternal(accounts: accounts, snapshots: snapshots, preCreateMarkerFile: false)
+        makeInternal(
+            accounts: accounts,
+            snapshots: snapshots,
+            preCreateMarkerFile: false,
+            distributionChannel: distributionChannel,
+            codexBundleURL: Bundle.main.bundleURL
+        )
     }
 
     private static func makeInternal(
         accounts: [Account],
         snapshots: [UsageSnapshot],
-        preCreateMarkerFile: Bool
+        preCreateMarkerFile: Bool,
+        distributionChannel: DistributionChannel,
+        codexBundleURL: URL
     ) -> TestEnv {
         let container = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("AIUsageBuddyTests-\(UUID().uuidString)", isDirectory: true)
@@ -297,10 +378,13 @@ enum TestEnvironment {
                 defaults: UserDefaults(suiteName: "test-\(UUID().uuidString)")!,
                 // UpdateServiceのバージョン既定はBundle（Info.plist）由来になり、
                 // テストランナーでは "0.0.0" になるため明示する
-                currentVersion: "1.0.0"
+                currentVersion: "1.0.0",
+                distributionChannel: distributionChannel
             ),
             windowPresenter: AppWindowPresenter(host: windowHost),
-            shortcutManager: GlobalShortcutManager(registrar: shortcutRegistrar)
+            shortcutManager: GlobalShortcutManager(registrar: shortcutRegistrar),
+            distributionChannel: distributionChannel,
+            codexBundleURL: codexBundleURL
         )
         if !accounts.isEmpty {
             model.settingsStore.settings.selectedAccountID = accounts.first?.id

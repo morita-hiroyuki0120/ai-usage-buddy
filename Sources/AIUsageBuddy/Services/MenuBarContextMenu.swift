@@ -49,6 +49,7 @@ public enum MenuBarContextMenuBuilder {
         accounts: [Account],
         selectedAccountID: UUID?,
         isRefreshing: Bool,
+        includeUpdateCheck: Bool = true,
         localize: (String) -> String = { L($0) }
     ) -> [MenuBarContextItem] {
         var items: [MenuBarContextItem] = []
@@ -88,11 +89,13 @@ public enum MenuBarContextMenuBuilder {
             title: localize("context.openSettings")
         ))
 
-        // 更新確認
-        items.append(MenuBarContextItem(
-            kind: .action(.checkForUpdates),
-            title: localize("context.checkForUpdates")
-        ))
+        if includeUpdateCheck {
+            // 更新確認
+            items.append(MenuBarContextItem(
+                kind: .action(.checkForUpdates),
+                title: localize("context.checkForUpdates")
+            ))
+        }
 
         items.append(.separator())
 

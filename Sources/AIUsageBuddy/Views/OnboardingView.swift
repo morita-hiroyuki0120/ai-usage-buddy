@@ -112,11 +112,6 @@ struct OnboardingView: View {
             case .awaitingBrowserAuth(let authURL):
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L("settings.login.waiting")).font(.callout)
-                    Text(authURL)
-                        .font(.caption2)
-                        .foregroundStyle(.blue)
-                        .lineLimit(2)
-                        .truncationMode(.middle)
                     HStack {
                         Button(L("settings.login.reopen")) {
                             if let url = URL(string: authURL) { NSWorkspace.shared.open(url) }

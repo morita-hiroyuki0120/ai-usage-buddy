@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 
 // MARK: - JSON-RPC types
 
@@ -84,6 +85,8 @@ public enum AnyCodable: Codable, Sendable {
 
 public enum CodexClientError: Error, LocalizedError, Sendable {
     case binaryNotFound(path: String)
+    case storeHelperMissing
+    case storeHomeInvalid
     case launchFailed(String)
     case timeout(method: String)
     case serverError(code: Int, message: String)
@@ -95,6 +98,10 @@ public enum CodexClientError: Error, LocalizedError, Sendable {
         switch self {
         case .binaryNotFound(let path):
             return "Codex CLI not found at \(path). Install the ChatGPT macOS app or Codex CLI."
+        case .storeHelperMissing:
+            return "The bundled Codex helper is missing or not executable. Reinstall AI Usage Buddy from the Mac App Store."
+        case .storeHomeInvalid:
+            return "The App Store edition could not prepare its private account workspace. Reopen the app and try again."
         case .launchFailed(let reason):
             return "Failed to launch codex app-server: \(reason)"
         case .timeout(let method):
@@ -131,12 +138,18 @@ public actor CodexAppServerClient {
     /// 追加の検索パス（PATH 上の codex も許容する）。
     public static let fallbackBinaryNames = ["codex"]
 
-    private let executableURL: URL
+    private let executableURL: URL?
+    private let distributionChannel: DistributionChannel
+    private let bundleURL: URL
+    private let accountID: UUID?
+    private let containerDirectory: URL?
     private let codexHome: URL?
     private let clientName: String
     private let clientVersion: String
 
     private var process: Process?
+    /// Holds children after bounded shutdown returns until their termination callback arrives.
+    private var stoppingProcesses: [ObjectIdentifier: Process] = [:]
     private var stdin: FileHandle?
     private var nextID = 1
     private var pending: [Int: CheckedContinuation<AnyCodable, Error>] = [:]
@@ -152,46 +165,82 @@ public actor CodexAppServerClient {
         executableURL: URL? = nil,
         codexHome: URL? = nil,
         clientName: String = "AI Usage Buddy",
-        clientVersion: String = "1.0.0"
+        clientVersion: String = "1.0.0",
+        distributionChannel: DistributionChannel = .current,
+        bundleURL: URL = Bundle.main.bundleURL,
+        accountID: UUID? = nil,
+        containerDirectory: URL? = nil
     ) {
-        if let executableURL {
-            self.executableURL = executableURL
-        } else if FileManager.default.fileExists(atPath: Self.bundledBinaryPath) {
-            self.executableURL = URL(fileURLWithPath: Self.bundledBinaryPath)
-        } else {
-            self.executableURL = URL(fileURLWithPath: "codex")
-        }
+        self.executableURL = executableURL
         self.codexHome = codexHome
         self.clientName = clientName
         self.clientVersion = clientVersion
+        self.distributionChannel = distributionChannel
+        self.bundleURL = bundleURL
+        self.accountID = accountID
+        self.containerDirectory = containerDirectory
     }
 
     public func isAlive() -> Bool {
         process?.isRunning ?? false
     }
 
+#if AI_USAGE_BUDDY_APP_STORE && AI_USAGE_BUDDY_RUNTIME_VALIDATION
+    var ownedProcessIDsForRuntimeValidation: [Int32] {
+        let current = process.flatMap { $0.isRunning ? $0.processIdentifier : nil }
+        let stopping = stoppingProcesses.values.compactMap {
+            $0.isRunning ? $0.processIdentifier : nil
+        }
+        return Array(Set(([current].compactMap { $0 }) + stopping)).sorted()
+    }
+#endif
+
+#if DEBUG
+    func processForTesting() -> Process? { process }
+#endif
+
     /// プロセスを起動し initialize ハンドシェイクを行う。
     public func start() async throws {
-        guard process?.isRunning != true else { return }
+        try Task.checkCancellation()
+        if let current = process {
+            guard !current.isRunning else { return }
+            handleTermination(for: current, status: current.terminationStatus)
+        }
 
         let proc = Process()
-        proc.executableURL = executableURL
-        proc.arguments = ["app-server"]
-        var environment = ProcessInfo.processInfo.environment
-        if let codexHome {
-            environment["CODEX_HOME"] = codexHome.path
-        }
-        proc.environment = environment
-        proc.standardError = Pipe()
+        let executable = try CodexExecutableResolver.resolve(
+            channel: distributionChannel,
+            bundleURL: bundleURL,
+            explicitURL: executableURL
+        )
+        proc.executableURL = executable.url
+        proc.arguments = executable.kind.arguments
+        let processConfiguration = try CodexProcessConfigurationBuilder.make(
+            channel: distributionChannel,
+            inheritedEnvironment: ProcessInfo.processInfo.environment,
+            codexHome: codexHome,
+            accountID: accountID,
+            containerDirectory: containerDirectory
+        )
+        proc.environment = processConfiguration.environment
+        proc.currentDirectoryURL = processConfiguration.workingDirectoryURL
+        // Do not retain auth diagnostics or let an unread pipe block the helper.
+        proc.standardError = FileHandle.nullDevice
 
         let stdinPipe = Pipe()
         let stdoutPipe = Pipe()
         proc.standardInput = stdinPipe
         proc.standardOutput = stdoutPipe
+        proc.terminationHandler = { [self] terminatedProcess in
+            Task {
+                await handleTermination(for: terminatedProcess, status: terminatedProcess.terminationStatus)
+            }
+        }
 
         do {
             try proc.run()
         } catch {
+            proc.terminationHandler = nil
             throw CodexClientError.launchFailed(error.localizedDescription)
         }
 
@@ -199,47 +248,92 @@ public actor CodexAppServerClient {
         self.stdin = stdinPipe.fileHandleForWriting
         self.initialized = false
 
-        // プロセス終了を監視し、待機中のリクエストを失敗させる
-        Task.detached { [weak self] in
-            proc.waitUntilExit()
-            await self?.handleTermination(status: proc.terminationStatus)
-        }
-
         // stdout の行読み取り
         Task.detached { [weak self] in
             await self?.readLines(from: stdoutPipe.fileHandleForReading)
         }
 
         // initialize ハンドシェイク
-        _ = try await request(
-            method: "initialize",
-            params: [
-                "clientInfo": .dictionary([
-                    "name": .string(self.clientName),
-                    "version": .string(self.clientVersion),
-                ])
-            ]
-        )
-        sendNotification(method: "initialized", params: [:])
-        initialized = true
+        do {
+            _ = try await request(
+                method: "initialize",
+                params: [
+                    "clientInfo": .dictionary([
+                        "name": .string(self.clientName),
+                        "version": .string(self.clientVersion),
+                    ])
+                ]
+            )
+            guard process === proc else { throw CodexClientError.terminated }
+            sendNotification(method: "initialized", params: [:])
+            initialized = true
+        } catch {
+            await stop(process: proc)
+            throw error
+        }
     }
 
     /// プロセスを終了する。
-    public func stop() {
+    public func stop() async {
+        guard let process else {
+            failAllPending(with: CodexClientError.terminated)
+            finishNotificationStreams()
+            stdin = nil
+            initialized = false
+            return
+        }
+        await stop(process: process)
+    }
+
+    private func stop(process target: Process) async {
+        if process === target {
+            failAllPending(with: CodexClientError.terminated)
+            finishNotificationStreams()
+            stdin = nil
+            initialized = false
+        }
+
+        let identity = ObjectIdentifier(target)
+        stoppingProcesses[identity] = target
+        if target.isRunning {
+            target.terminate()
+            if !(await waitForExit(target, timeout: 1.0)), target.isRunning {
+                _ = Darwin.kill(target.processIdentifier, SIGKILL)
+                _ = await waitForExit(target, timeout: 1.0)
+            }
+        }
+
+        if !target.isRunning {
+            handleTermination(for: target, status: target.terminationStatus)
+        }
+    }
+
+    private func waitForExit(_ target: Process, timeout: TimeInterval) async -> Bool {
+        let intervalNanoseconds: UInt64 = 50_000_000
+        let checks = max(1, Int(timeout * 1_000_000_000 / Double(intervalNanoseconds)))
+        for _ in 0..<checks {
+            if !target.isRunning { return true }
+            try? await Task.sleep(nanoseconds: intervalNanoseconds)
+        }
+        return !target.isRunning
+    }
+
+    private func failAllPending(with error: Error) {
         for continuation in pending.values {
-            continuation.resume(throwing: CodexClientError.terminated)
+            continuation.resume(throwing: error)
         }
         pending.removeAll()
+        for timeout in pendingTaskTimeouts.values {
+            timeout.cancel()
+        }
+        pendingTaskTimeouts.removeAll()
+    }
+
+    private func finishNotificationStreams() {
         for cont in notificationContinuations.values {
             cont.finish()
         }
         notificationContinuations.removeAll()
-        if let process, process.isRunning {
-            process.terminate()
-        }
-        process = nil
-        stdin = nil
-        initialized = false
     }
 
     // MARK: - 公式メソッド
@@ -253,7 +347,11 @@ public actor CodexAppServerClient {
 
     /// `account/rateLimits/read` — 5時間枠・週間枠の残量とリセット時刻を取得する。
     public func readRateLimits() async throws -> GetAccountRateLimitsResponse {
-        let result = try await request(method: "account/rateLimits/read", params: [:])
+        // Fixed protocol v2/account.rs uses serde(rename_all = "camelCase").
+        // Skip unshown reset-credit details only; ordinary quota/reset data is retained.
+        let params: [String: AnyCodable] = distributionChannel.isAppStore
+            ? ["excludeResetCreditDetails": .bool(true)] : [:]
+        let result = try await request(method: "account/rateLimits/read", params: params)
         let data = try JSONEncoder().encode(result)
         do {
             return try JSONDecoder().decode(GetAccountRateLimitsResponse.self, from: data)
@@ -337,18 +435,17 @@ public actor CodexAppServerClient {
         stdin.write(data + Data("\n".utf8))
     }
 
-    private func handleTermination(status: Int32) {
-        for continuation in pending.values {
-            continuation.resume(throwing: CodexClientError.terminated)
-        }
-        pending.removeAll()
-        for cont in notificationContinuations.values {
-            cont.finish()
-        }
-        notificationContinuations.removeAll()
+    func handleTermination(for terminatedProcess: Process, status: Int32) {
+        stoppingProcesses.removeValue(forKey: ObjectIdentifier(terminatedProcess))
+        terminatedProcess.terminationHandler = nil
+        guard process === terminatedProcess else { return }
+
+        failAllPending(with: CodexClientError.terminated)
+        finishNotificationStreams()
         process = nil
         stdin = nil
         initialized = false
+        readBuffer = Data()
         if status != 0 {
             logger.error("app-server exited with status \(status)")
         }

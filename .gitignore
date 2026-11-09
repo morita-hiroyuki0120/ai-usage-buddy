@@ -16,8 +16,12 @@ scripts/sign-and-notarize.sh
 *.cer
 *.crt
 *.mobileprovision
+*.provisionprofile
 *.pem
 *.key
+
+# 内部作業記録（ローカル保持、公開対象外）
+/docs/app-store-checkpoint.md
 
 # エディタ・個人用
 *.xcuserdatad/

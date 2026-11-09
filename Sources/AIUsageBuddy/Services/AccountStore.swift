@@ -1,5 +1,11 @@
 import Foundation
 
+enum AccountStoreError: Error, Equatable {
+    case managedHomeOutsideContainer
+    case managedHomeRemovalFailed
+    case accountListPersistenceFailed
+}
+
 /// アカウントの登録情報とアプリ管理の CODEX_HOME を永続化するストア。
 public final class AccountStore: @unchecked Sendable {
 
@@ -13,6 +19,7 @@ public final class AccountStore: @unchecked Sendable {
     }
 
     private let queue = DispatchQueue(label: "com.aiusagebuddy.app.accountstore")
+    public let containerDirectory: URL
     private let fileURL: URL
     private let homesDirectory: URL
     private var cachedAccounts: [Account]?
@@ -20,6 +27,7 @@ public final class AccountStore: @unchecked Sendable {
 
     public init(containerDirectory: URL? = nil) {
         let base = containerDirectory ?? Self.defaultContainer()
+        self.containerDirectory = base
         self.fileURL = base.appendingPathComponent("accounts.json")
         self.homesDirectory = base.appendingPathComponent("Homes", isDirectory: true)
     }
@@ -80,11 +88,42 @@ public final class AccountStore: @unchecked Sendable {
     public func delete(accountID: UUID) throws {
         var accounts = try loadAccounts()
         guard let index = accounts.firstIndex(where: { $0.id == accountID }) else { return }
-        let account = accounts.remove(at: index)
-        try saveAccounts(accounts)
+        let account = accounts[index]
         if account.homeKind == .managed {
-            let home = managedHomeURL(for: accountID)
-            try? FileManager.default.removeItem(at: home)
+            try removeManagedHome(for: accountID)
+        }
+        accounts.remove(at: index)
+        do {
+            try saveAccounts(accounts)
+        } catch {
+            throw AccountStoreError.accountListPersistenceFailed
+        }
+    }
+
+    private func removeManagedHome(for accountID: UUID) throws {
+        let fileManager = FileManager.default
+        let canonicalContainer = containerDirectory.standardizedFileURL
+            .resolvingSymlinksInPath().standardizedFileURL
+        let expectedHomes = homesDirectory.standardizedFileURL
+        let canonicalHomes = expectedHomes.resolvingSymlinksInPath().standardizedFileURL
+        guard canonicalHomes.deletingLastPathComponent().path == canonicalContainer.path else {
+            throw AccountStoreError.managedHomeOutsideContainer
+        }
+
+        let home = managedHomeURL(for: accountID).standardizedFileURL
+        guard home.deletingLastPathComponent().path == expectedHomes.path else {
+            throw AccountStoreError.managedHomeOutsideContainer
+        }
+        guard fileManager.fileExists(atPath: home.path) else { return }
+
+        let canonicalHome = home.resolvingSymlinksInPath().standardizedFileURL
+        guard canonicalHome.deletingLastPathComponent().path == canonicalHomes.path else {
+            throw AccountStoreError.managedHomeOutsideContainer
+        }
+        do {
+            try fileManager.removeItem(at: home)
+        } catch {
+            throw AccountStoreError.managedHomeRemovalFailed
         }
     }
 

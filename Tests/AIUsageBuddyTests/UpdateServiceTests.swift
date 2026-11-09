@@ -41,7 +41,8 @@ struct UpdateServiceTests {
             provider: provider,
             defaults: makeDefaults(),
             currentVersion: "1.0.0",
-            now: { now }
+            now: { now },
+            distributionChannel: .direct
         )
 
         await service.automaticCheckIfNeeded(enabled: true)
@@ -60,7 +61,7 @@ struct UpdateServiceTests {
     func manualCheckBypassesThrottle() async {
         let provider = SpyUpdateProvider()
         provider.setRelease(UpdateRelease(version: "1.0.0"))
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
 
         await service.checkNow()
         await service.checkNow()
@@ -78,7 +79,8 @@ struct UpdateServiceTests {
             provider: provider,
             defaults: makeDefaults(),
             currentVersion: "1.0.0",
-            now: { now }
+            now: { now },
+            distributionChannel: .direct
         )
 
         await service.automaticCheckIfNeeded(enabled: false)
@@ -96,7 +98,7 @@ struct UpdateServiceTests {
     func newerVersionReportsAvailable() async {
         let provider = SpyUpdateProvider()
         provider.setRelease(UpdateRelease(version: "1.2.0", pageURL: URL(string: "https://github.com/example/releases")))
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
 
         await service.checkNow()
         #expect(service.outcome == .available(version: "1.2.0", pageURL: URL(string: "https://github.com/example/releases")))
@@ -107,7 +109,7 @@ struct UpdateServiceTests {
     func sameOrOlderReportsUpToDate() async {
         let provider = SpyUpdateProvider()
         provider.setRelease(UpdateRelease(version: "1.0.0"))
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
         await service.checkNow()
         #expect(service.outcome == .upToDate)
 
@@ -119,7 +121,7 @@ struct UpdateServiceTests {
     @Test("GitHub所有者がプレースホルダーなら notConfigured")
     func placeholderOwnerIsNotConfigured() async {
         // 既定の GitHubReleasesProvider は所有者が未設定
-        let service = UpdateService(provider: GitHubReleasesProvider(), defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: GitHubReleasesProvider(), defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
         await service.checkNow()
         #expect(service.outcome == .notConfigured)
 
@@ -131,7 +133,7 @@ struct UpdateServiceTests {
         let provider = SpyUpdateProvider()
         provider.setError(UpdateProviderError.server(status: 503))
         var now = Date()
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", now: { now })
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", now: { now }, distributionChannel: .direct)
 
         await service.checkNow()
         if case .failed = service.outcome {
@@ -152,7 +154,7 @@ struct UpdateServiceTests {
     func adhocBuildSuppressesInstall() {
         let provider = SpyUpdateProvider()
         provider.setRelease(UpdateRelease(version: "2.0.0"))
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
 
         // テストランナーは .app バンドル外 → manualOnly
         let eligibility = AutoUpdateEligibility.evaluate()
@@ -172,7 +174,7 @@ struct UpdateServiceTests {
     func unconfirmedInstallRequiresConfirmation() async {
         let provider = SpyUpdateProvider()
         provider.setRelease(UpdateRelease(version: "2.0.0"))
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
         await service.checkNow()
 
         // eligible でない環境では確認要求より抑止が優先される

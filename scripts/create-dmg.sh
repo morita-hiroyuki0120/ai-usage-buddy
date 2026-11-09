@@ -1,6 +1,6 @@
 #!/bin/bash
 # AI Usage Buddy — DMG作成（.app + Applicationsへのエイリアス + インストール案内）
-# 使い方: ./scripts/create-dmg.sh
+# 使い方: ./scripts/create-dmg.sh [--reuse-app]
 # 前提: build/release/AI Usage Buddy.app（無ければ build-app.sh で生成）
 # 出力先: build/release/AIUsageBuddy-<version>-<build>-arm64.dmg
 # 注意: このスクリプトは署名・公証を行わない（sign-and-notarize.sh.example 参照）。
@@ -8,12 +8,23 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="AI Usage Buddy"
-RELEASE_DIR="$PROJECT_ROOT/build/release"
+RELEASE_DIR="${AI_USAGE_BUDDY_RELEASE_DIR:-$PROJECT_ROOT/build/release}"
 APP_ROOT="$RELEASE_DIR/$APP_NAME.app"
 SUMS_FILE="$RELEASE_DIR/SHA256SUMS.txt"
 
+if [[ $# -gt 1 || ( $# -eq 1 && "$1" != "--reuse-app" ) ]]; then
+  echo "使い方: $0 [--reuse-app]" >&2
+  exit 2
+fi
+REUSE_APP=0
+[[ $# -eq 1 ]] && REUSE_APP=1
+
 # 1) .app が無ければ生成（既存スクリプトを再利用）
 if [[ ! -d "$APP_ROOT" ]]; then
+  if [[ "$REUSE_APP" -eq 1 ]]; then
+    echo "--reuse-app 指定時は既存の .app が必要: $APP_ROOT" >&2
+    exit 1
+  fi
   echo "==> .app が無いため build-app.sh を実行"
   "$PROJECT_ROOT/scripts/build-app.sh" "$RELEASE_DIR"
 fi
@@ -23,22 +34,58 @@ VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_R
 BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP_ROOT/Contents/Info.plist")
 DMG_NAME="AIUsageBuddy-${VERSION}-${BUILD}-arm64.dmg"
 DMG_PATH="$RELEASE_DIR/$DMG_NAME"
+SUMS_TMP="$RELEASE_DIR/.SHA256SUMS.txt.$$"
 
 # 3) 署名状態の確認（DMG掲載物の状態を明示）
-SIGN_INFO=$(codesign -dv "$APP_ROOT" 2>&1 || true)
-SIGNATURE=$(echo "$SIGN_INFO" | grep "^Signature=" | head -1 | cut -d= -f2)
-TEAM_ID=$(echo "$SIGN_INFO" | grep "^TeamIdentifier=" | head -1 | cut -d= -f2)
-if [[ "$SIGNATURE" == "adhoc" || -z "$SIGNATURE" || "$TEAM_ID" == "not set" ]]; then
-  SIGNING_STATUS="ad-hoc署名（配布用のDeveloper ID署名ではありません・公証も未実施）"
+SIGN_INFO_STATE="signed"
+if ! SIGN_INFO=$(codesign -dv --verbose=4 "$APP_ROOT" 2>&1); then
+  if printf '%s\n' "$SIGN_INFO" | grep -Fq "code object is not signed at all"; then
+    SIGN_INFO_STATE="unsigned"
+  else
+    echo ".app の署名状態を判定できないためDMGを作成しない。" >&2
+    printf '%s\n' "$SIGN_INFO" >&2
+    exit 1
+  fi
+fi
+SIGNATURE=$(printf '%s\n' "$SIGN_INFO" | sed -n 's/^Signature=//p' | head -1)
+TEAM_ID=$(printf '%s\n' "$SIGN_INFO" | sed -n 's/^TeamIdentifier=//p' | head -1)
+if printf '%s\n' "$SIGN_INFO" | grep -q '^Authority=Developer ID Application: '; then
+  if [[ -z "$TEAM_ID" || "$TEAM_ID" == "not set" ]]; then
+    echo "Developer ID署名にTeamIdentifierが無いため停止した。" >&2
+    exit 1
+  fi
+  if [[ "${AI_USAGE_BUDDY_NOTARIZATION_STATE:-}" == "pending" ]]; then
+    if ! codesign --verify --strict "$APP_ROOT"; then
+      echo "Developer ID署名を検証できないためDMGを作成しない。" >&2
+      exit 1
+    fi
+    SIGNING_STATUS="Developer ID署名済み（公証・ステープル未実施）"
+  elif codesign --verify --strict "$APP_ROOT" >/dev/null 2>&1 &&
+      xcrun stapler validate "$APP_ROOT" >/dev/null 2>&1 &&
+      spctl --assess --type execute "$APP_ROOT" >/dev/null 2>&1; then
+    SIGNING_STATUS="Developer ID署名・公証ステープル・Gatekeeper検証済み"
+  else
+    SIGNING_STATUS="Developer ID署名あり（公証・ステープル未検証）"
+  fi
+elif [[ "$SIGNATURE" == "adhoc" ]]; then
+  SIGNING_STATUS="ad-hoc署名（Developer ID署名・公証は未実施）"
+elif [[ "$SIGN_INFO_STATE" == "unsigned" ]]; then
+  SIGNING_STATUS="未署名（Developer ID署名・公証は未実施）"
+elif [[ -n "$TEAM_ID" && "$TEAM_ID" != "not set" ]] ||
+     printf '%s\n' "$SIGN_INFO" | grep -q '^Authority='; then
+  SIGNING_STATUS="署名あり（Developer ID署名・公証は未確認）"
 else
-  SIGNING_STATUS="TeamIdentifier=$TEAM_ID の署名あり"
+  echo ".app の署名情報が想定外の形式のため停止した。" >&2
+  printf '%s\n' "$SIGN_INFO" >&2
+  exit 1
 fi
 
 # 4) ステージング組み立て（.app + Applicationsエイリアス + 案内）
 echo "==> ステージング組み立て"
 STAGING=$(mktemp -d)
-trap 'rm -rf "$STAGING"' EXIT
-cp -R "$APP_ROOT" "$STAGING/"
+DMG_TMP="$RELEASE_DIR/.AIUsageBuddy-${VERSION}-${BUILD}-arm64-$$.dmg"
+trap 'rm -rf "$STAGING"; rm -f "$DMG_TMP" "$SUMS_TMP"' EXIT
+ditto "$APP_ROOT" "$STAGING/$APP_NAME.app"
 ln -s /Applications "$STAGING/Applications"
 cat > "$STAGING/はじめにお読みください.txt" <<TXT
 AI Usage Buddy ${VERSION} (build ${BUILD}) — macOS 13以降 / Apple Silicon
@@ -65,15 +112,20 @@ TXT
 
 # 5) DMG作成（UDZO圧縮）
 echo "==> DMG作成: $DMG_NAME"
-rm -f "$DMG_PATH"
-hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING" -ov -format UDZO "$DMG_PATH" >/dev/null
+hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING" -ov -format UDZO "$DMG_TMP" >/dev/null
+mv -f "$DMG_TMP" "$DMG_PATH"
 
-# 6) SHA-256を SUMS ファイルへ追記
+# zipがあれば現在の内容も含め、最終状態のチェックサムに更新する。
 SHA_DMG=$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')
-touch "$SUMS_FILE"
-grep -v "  $DMG_NAME$" "$SUMS_FILE" > "$SUMS_FILE.tmp" 2>/dev/null || true
-mv "$SUMS_FILE.tmp" "$SUMS_FILE"
-echo "$SHA_DMG  $DMG_NAME" >> "$SUMS_FILE"
+{
+  ZIP_NAME="AIUsageBuddy-${VERSION}-${BUILD}-arm64.zip"
+  ZIP_PATH="$RELEASE_DIR/$ZIP_NAME"
+  if [[ -f "$ZIP_PATH" ]]; then
+    shasum -a 256 "$ZIP_PATH" | awk -v name="$ZIP_NAME" '{print $1 "  " name}'
+  fi
+  echo "$SHA_DMG  $DMG_NAME"
+} > "$SUMS_TMP"
+mv -f "$SUMS_TMP" "$SUMS_FILE"
 
 echo "==> SHA-256"
 echo "    $SHA_DMG  $DMG_NAME"

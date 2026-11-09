@@ -28,7 +28,8 @@ enum MenuBarSupport {
             let descriptor = MenuBarContextMenuBuilder.descriptor(
                 accounts: state.accounts,
                 selectedAccountID: state.selectedAccountID,
-                isRefreshing: state.isRefreshing
+                isRefreshing: state.isRefreshing,
+                includeUpdateCheck: !model.distributionChannel.isAppStore
             )
             let menu = coordinator.makeMenu(from: descriptor)
             menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
@@ -41,6 +42,7 @@ enum MenuBarSupport {
 /// （.app バンドルの Info.plist で LSUIElement = 1 を設定する）。
 /// 設定・初回セットアップ・クイック利用状況の各ウィンドウは
 /// AppModel の AppWindowPresenter（NSWindow）から呈示する。
+#if !AI_USAGE_BUDDY_APP_STORE || !AI_USAGE_BUDDY_RUNTIME_VALIDATION
 @main
 struct AIUsageBuddyApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -62,6 +64,8 @@ struct AIUsageBuddyApp: App {
 
 /// LSUIElement アプリのためのアプリケーションデリゲート。
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var terminationInProgress = false
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 起動時に即時取得と自動更新ループを開始する
         Task { @MainActor in
@@ -75,9 +79,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func applicationWillTerminate(_ notification: Notification) {
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !terminationInProgress else { return .terminateLater }
+        terminationInProgress = true
         Task { @MainActor in
-            AppModelContainer.model.stop()
+            await AppModelContainer.model.stop()
+            NSApp.reply(toApplicationShouldTerminate: true)
         }
+        return .terminateLater
     }
 }
+#endif

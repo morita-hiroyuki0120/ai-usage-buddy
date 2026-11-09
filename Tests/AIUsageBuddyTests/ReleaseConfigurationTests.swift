@@ -8,6 +8,32 @@ import Testing
 @MainActor
 struct ReleaseConfigurationTests {
 
+    @Test("Store support uses only the approved public HTTPS destination")
+    func storeSupportURLIsExactAndHasNoUserPayload() throws {
+        let url = try #require(ReleaseConfiguration.storeSupportURL)
+        #expect(url.absoluteString == "https://github.com/morita-hiroyuki0120/ai-usage-buddy/issues")
+        #expect(url.scheme == "https")
+        #expect(url.host == "github.com")
+        #expect(url.path == "/morita-hiroyuki0120/ai-usage-buddy/issues")
+        #expect(url.query == nil)
+        #expect(url.fragment == nil)
+        #expect(url.user == nil && url.password == nil && url.port == nil)
+    }
+
+    @Test("Store support label and browser hint exist in Japanese and English")
+    func storeSupportStringsAreLocalized() {
+        let name = "StoreSupportStrings-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let manager = LocalizationManager(defaults: defaults)
+        for key in ["settings.about.support", "settings.about.supportHint"] {
+            for language in AppLanguage.allCases {
+                let value = manager.string(key: key, language: language)
+                #expect(!value.isEmpty && value != key)
+            }
+        }
+    }
+
     private func makeDefaults() -> UserDefaults {
         UserDefaults(suiteName: "test-release-\(UUID().uuidString)")!
     }
@@ -153,7 +179,7 @@ struct ReleaseConfigurationTests {
     func adhocEligibilitySuppressesInstall() async {
         let provider = SpyUpdateProvider()
         provider.setRelease(UpdateRelease(version: "2.0.0"))
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
         await service.checkNow()
 
         let decision = service.requestInstall(
@@ -167,7 +193,7 @@ struct ReleaseConfigurationTests {
     func unsignedEligibilitySuppressesInstall() async {
         let provider = SpyUpdateProvider()
         provider.setRelease(UpdateRelease(version: "2.0.0"))
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
         await service.checkNow()
 
         let decision = service.requestInstall(
@@ -216,7 +242,7 @@ struct ReleaseConfigurationTests {
     func eligibleStillManualDownloadUntilSparkle() async {
         let provider = SpyUpdateProvider()
         provider.setRelease(UpdateRelease(version: "2.0.0"))
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
         await service.checkNow()
 
         // 未確認なら確認要求
@@ -238,7 +264,7 @@ struct ReleaseConfigurationTests {
     func manualCheckWorksEvenWhenAutomaticDisabled() async {
         let provider = SpyUpdateProvider()
         provider.setRelease(UpdateRelease(version: "1.0.0"))
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
 
         await service.automaticCheckIfNeeded(enabled: false)
         #expect(provider.fetchCount == 0, "自動確認オフなら自動では確認しない")
@@ -294,7 +320,7 @@ struct ReleaseConfigurationTests {
             userInfo: [NSLocalizedDescriptionKey: "request to user@example.com failed with bearer abcdefghijklmnopqrstuvwxyz012345 and access_token=abcdefghijklmnopqrstuvwxyz0123456789ABCDEF"]
         )
         provider.setError(leaked)
-        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0")
+        let service = UpdateService(provider: provider, defaults: makeDefaults(), currentVersion: "1.0.0", distributionChannel: .direct)
 
         await service.checkNow()
         guard case .failed(let reason) = service.outcome else {
