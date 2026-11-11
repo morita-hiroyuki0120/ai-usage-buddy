@@ -29,6 +29,10 @@ struct PopoverView: View {
         VStack(alignment: .leading, spacing: 12) {
             header
 
+            if model.isSampleMode {
+                SampleModeBanner(model: model)
+            }
+
             if let account = model.selectedAccount {
                 accountPicker(account: account)
 

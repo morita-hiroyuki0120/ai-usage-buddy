@@ -175,3 +175,17 @@
 "error.kind.other.explanation" = "An unknown error occurred. If it persists, check Settings.";
 "error.action.retry" = "Retry";
 "error.action.openSettings" = "Settings…";
+
+"sample.start" = "Try with sample data";
+"sample.start.note" = "Explore the app without an account. No sign-in, network access, or data saving takes place.";
+"sample.exit" = "Exit sample data";
+"sample.banner.title" = "Showing sample data";
+"sample.banner.note" = "This is not your actual usage. No network requests or notifications are made.";
+"sample.scenario.label" = "Sample state";
+"sample.scenario.plenty" = "Plenty left";
+"sample.scenario.low" = "Running low";
+"sample.scenario.nearlyDepleted" = "Nearly depleted";
+"sample.account.first" = "Sample account A";
+"sample.account.second" = "Sample account B";
+"sample.settings.note" = "Adding, renaming, and deleting accounts is unavailable while sample data is shown.";
+"sample.onboarding.active" = "Sample data is on. Click the cat in the menu bar to explore.";

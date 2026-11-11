@@ -78,6 +78,8 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var launchAtLoginError: String?
     /// アカウント削除に失敗した場合の安全なUIメッセージ。
     @Published public private(set) var accountDeletionErrorMessage: String?
+    /// サンプルデータ表示（App Review 用）の状態。メモリ上のみで保持し、永続化しない。
+    @Published public private(set) var sampleSession: SampleSession?
 
     public let settingsStore: SettingsStore
     public let snapshotStore: SnapshotStore
@@ -248,6 +250,11 @@ public final class AppModel: ObservableObject {
     /// 全アカウントの利用枠を公式経路から取得する。
     /// - Parameter sendNotifications: 自動更新時のみ true（起動直後の初回は通知しない）。
     public func refreshAll(sendNotifications: Bool) async {
+        // サンプルデータ表示中は通信・helper起動・通知を一切行わない。
+        if isSampleMode {
+            refreshSampleSnapshots()
+            return
+        }
         guard !isRefreshing else { return }
         isRefreshing = true
         defer {
@@ -327,13 +334,13 @@ public final class AppModel: ObservableObject {
 
     /// 選択中アカウント＋表示リミットに基づいてキャラクター状態と残量を再計算する。
     public func recomputeDisplayedState() {
-        guard let selectedID = settingsStore.settings.selectedAccountID,
+        guard let selectedID = effectiveSelectedAccountID,
               let snapshot = snapshots[selectedID] else {
             characterState = .unknown
             displayedPercent = nil
             return
         }
-        let limit = settingsStore.displayLimit(for: selectedID)
+        let limit = displayLimit(for: selectedID)
         selectedDisplayLimit = limit
         let key = "\(selectedID.uuidString)|\(limit.rawValue)"
 
@@ -352,20 +359,41 @@ public final class AppModel: ObservableObject {
     // MARK: - Selection
 
     public var selectedAccount: Account? {
-        guard let id = settingsStore.settings.selectedAccountID else { return nil }
+        guard let id = effectiveSelectedAccountID else { return nil }
         return accounts.first { $0.id == id }
     }
 
+    /// 選択中アカウントID。サンプルデータ表示中は設定ファイルに触れずメモリ上の選択を使う。
+    private var effectiveSelectedAccountID: UUID? {
+        if let sampleSession { return sampleSession.selectedAccountID }
+        return settingsStore.settings.selectedAccountID
+    }
+
+    /// アカウントごとの表示リミット。サンプルデータ表示中は設定ファイルに触れない。
+    public func displayLimit(for accountID: UUID) -> QuotaLimitKind {
+        if let sampleSession { return sampleSession.displayLimits[accountID] ?? .fiveHour }
+        return settingsStore.displayLimit(for: accountID)
+    }
+
     public func selectAccount(_ id: UUID) {
-        settingsStore.settings.selectedAccountID = id
-        selectedDisplayLimit = settingsStore.displayLimit(for: id)
+        if sampleSession != nil {
+            guard accounts.contains(where: { $0.id == id }) else { return }
+            sampleSession?.selectedAccountID = id
+        } else {
+            settingsStore.settings.selectedAccountID = id
+        }
+        selectedDisplayLimit = displayLimit(for: id)
         // 表示コンテキストが変わるためキャラクター状態はバンドから再導出する
         recomputeDisplayedState()
     }
 
     public func setDisplayLimit(_ limit: QuotaLimitKind, for accountID: UUID) {
-        settingsStore.setDisplayLimit(limit, for: accountID)
-        if settingsStore.settings.selectedAccountID == accountID {
+        if sampleSession != nil {
+            sampleSession?.displayLimits[accountID] = limit
+        } else {
+            settingsStore.setDisplayLimit(limit, for: accountID)
+        }
+        if effectiveSelectedAccountID == accountID {
             selectedDisplayLimit = limit
         }
         recomputeDisplayedState()
@@ -496,20 +524,113 @@ public final class AppModel: ObservableObject {
     public var menuBarContextState: (accounts: [Account], selectedAccountID: UUID?, isRefreshing: Bool) {
         (
             accounts,
-            settingsStore.settings.selectedAccountID,
+            effectiveSelectedAccountID,
             isRefreshing
         )
+    }
+
+    // MARK: - Sample data mode (App Review)
+
+    /// サンプルデータ表示の一時状態。メモリ上のみ。アプリ再起動で必ず通常状態に戻る。
+    public struct SampleSession: Equatable {
+        public var scenario: SampleScenario
+        var selectedAccountID: UUID?
+        var displayLimits: [UUID: QuotaLimitKind] = [:]
+        /// 開始前の（実）状態。終了時にそのまま戻す。永続化データには触れない。
+        let stashedAccounts: [Account]
+        let stashedSnapshots: [UUID: UsageSnapshot]
+    }
+
+    public var isSampleMode: Bool { sampleSession != nil }
+    public var sampleScenario: SampleScenario? { sampleSession?.scenario }
+
+    /// サンプルデータ表示を開始できるか。
+    /// Store 版のみ・実アカウント未接続のときだけ true（接続済みの実データと混在させない）。
+    public var canStartSampleMode: Bool {
+        guard distributionChannel.isAppStore, sampleSession == nil, pendingLoginClient == nil else {
+            return false
+        }
+        let hasConnectedAccount = accounts.count > 1
+            || accounts.contains { $0.officialEmail != nil || $0.officialPlanType != nil }
+            || snapshots.values.contains { !$0.isEmpty }
+        return !hasConnectedAccount
+    }
+
+    /// サンプルデータ表示を開始する。通信・認証・Keychain・保存領域には一切触れない。
+    public func startSampleMode() {
+        guard canStartSampleMode else { return }
+        invalidateInFlightRefreshes()
+        let sampleAccounts = SampleData.accounts(
+            firstName: L("sample.account.first"),
+            secondName: L("sample.account.second")
+        )
+        sampleSession = SampleSession(
+            scenario: .plenty,
+            selectedAccountID: sampleAccounts.first?.id,
+            stashedAccounts: accounts,
+            stashedSnapshots: snapshots
+        )
+        accounts = sampleAccounts
+        snapshots = SampleData.snapshots(scenario: .plenty, now: Date())
+        removeSampleCharacterStates()
+        selectedDisplayLimit = displayLimit(for: SampleData.firstAccountID)
+        recomputeDisplayedState()
+    }
+
+    /// サンプルデータ表示を終了し、開始前の状態へ戻す。
+    public func exitSampleMode() {
+        guard let session = sampleSession else { return }
+        invalidateInFlightRefreshes()
+        sampleSession = nil
+        accounts = session.stashedAccounts
+        snapshots = session.stashedSnapshots
+        removeSampleCharacterStates()
+        if let selected = settingsStore.settings.selectedAccountID {
+            selectedDisplayLimit = settingsStore.displayLimit(for: selected)
+        }
+        recomputeDisplayedState()
+    }
+
+    /// 残量シナリオを切り替える。
+    public func setSampleScenario(_ scenario: SampleScenario) {
+        guard sampleSession != nil else { return }
+        sampleSession?.scenario = scenario
+        refreshSampleSnapshots()
+    }
+
+    private func refreshSampleSnapshots() {
+        guard let session = sampleSession else { return }
+        snapshots = SampleData.snapshots(scenario: session.scenario, now: Date())
+        recomputeDisplayedState()
+    }
+
+    /// 開始・終了をまたいで、進行中の実取得結果が表示状態へ反映されないようにする。
+    private func invalidateInFlightRefreshes() {
+        accountListRevision &+= 1
+        for account in accounts {
+            accountRefreshRevision[account.id, default: 0] &+= 1
+        }
+    }
+
+    private func removeSampleCharacterStates() {
+        for id in SampleData.accountIDs {
+            for limit in QuotaLimitKind.allCases {
+                lastCharacterStates.removeValue(forKey: "\(id.uuidString)|\(limit.rawValue)")
+            }
+        }
     }
 
     // MARK: - Manual override
 
     public func setManualOverride(accountID: UUID, kind: QuotaLimitKind, percent: Int) {
+        guard !isSampleMode else { return }
         snapshotStore.setManualOverride(accountID: accountID, kind: kind, percent: percent)
         snapshots[accountID] = snapshotStore.snapshot(for: accountID)
         recomputeDisplayedState()
     }
 
     public func clearManualOverride(accountID: UUID, kind: QuotaLimitKind) {
+        guard !isSampleMode else { return }
         snapshotStore.clearManualOverride(accountID: accountID, kind: kind)
         snapshots[accountID] = snapshotStore.snapshot(for: accountID)
         recomputeDisplayedState()
@@ -531,6 +652,8 @@ public final class AppModel: ObservableObject {
     }
 
     private func deliverPendingNotifications() async {
+        // サンプルデータは実際の利用状況ではないため、実通知は送らない。
+        guard !isSampleMode else { return }
         let settings = settingsStore.settings
         let decisions = NotificationPolicy.pendingNotifications(
             accounts: accounts,
@@ -553,7 +676,7 @@ public final class AppModel: ObservableObject {
 
     /// 新規アカウント追加: 公式OAuthログインフローを開始する。
     public func beginAddAccount() async {
-        guard pendingLoginClient == nil else { return }
+        guard !isSampleMode, pendingLoginClient == nil else { return }
         let accountID = UUID()
         var client: (any PendingLoginClient)?
         var createdClient = false
@@ -757,7 +880,7 @@ public final class AppModel: ObservableObject {
     }
 
     public func deleteAccount(_ id: UUID) async {
-        guard !pendingAccountDeletions.contains(id),
+        guard !isSampleMode, !pendingAccountDeletions.contains(id),
               let account = accounts.first(where: { $0.id == id }) else { return }
         accountDeletionErrorMessage = nil
         accountListRevision &+= 1
@@ -811,6 +934,7 @@ public final class AppModel: ObservableObject {
     }
 
     public func renameAccount(_ id: UUID, displayName: String) {
+        guard !isSampleMode else { return }
         guard var account = accounts.first(where: { $0.id == id }) else { return }
         account.displayName = displayName.isEmpty ? (account.officialEmail ?? L("account.unnamed")) : displayName
         try? AccountStore.current.upsert(account)

@@ -175,3 +175,17 @@
 "error.kind.other.explanation" = "原因不明のエラーです。再試行しても続く場合は設定をご確認ください。";
 "error.action.retry" = "再試行";
 "error.action.openSettings" = "設定…";
+
+"sample.start" = "サンプルデータで試す";
+"sample.start.note" = "アカウントなしで画面と動作を確認できます。ログイン・通信・データ保存は行いません。";
+"sample.exit" = "サンプルデータを終了";
+"sample.banner.title" = "サンプルデータ表示中";
+"sample.banner.note" = "実際の利用状況ではありません。通信も通知も行いません。";
+"sample.scenario.label" = "サンプルの状態";
+"sample.scenario.plenty" = "余裕あり";
+"sample.scenario.low" = "低残量";
+"sample.scenario.nearlyDepleted" = "ほぼ枯渇";
+"sample.account.first" = "サンプルアカウント A";
+"sample.account.second" = "サンプルアカウント B";
+"sample.settings.note" = "サンプルデータ表示中は、アカウントの追加・名前変更・削除はできません。";
+"sample.onboarding.active" = "サンプルデータを表示中です。メニューバーの猫をクリックすると確認できます。";

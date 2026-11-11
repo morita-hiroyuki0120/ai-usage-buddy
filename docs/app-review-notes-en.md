@@ -19,6 +19,18 @@ Suggested walkthrough, to be checked against the final build:
 
 The planned App Sandbox configuration uses network.client for OpenAI communication and network.server for the local browser-authentication callback listener. The child helper is configured with app-sandbox and inherit to run within the parent's sandbox, with isolated per-account workspaces. Plugins and analytics are disabled by fixed launch settings and OTEL exporters are set to none; this is not a claim that the helper makes no other network requests. Final signed entitlements remain unverified.
 
-Review access is unresolved. Developer Support case 103007143655 provided general submission and attachment guidance, not advance approval of this app, a demo, or guideline 4.8 eligibility. We do not assume that a reviewer's own account or a video alone satisfies review-access requirements. No demo mode is implemented or approved; the prior-approval condition described in guideline 2.1(a) has not been resolved for this proposal. No personal credentials or fictitious review account are supplied here.
+Review access is unresolved. Developer Support case 103007143655 provided general submission and attachment guidance, not advance approval of this app, a demo, or guideline 4.8 eligibility. We do not assume that a reviewer's own account or a video alone satisfies review-access requirements. A built-in sample data mode was implemented on 2026-11-11 (Store build only; see the section below). Apple has not given advance approval for it; the prior-approval condition described in guideline 2.1(a) has not been resolved for this proposal. No personal credentials or fictitious review account are supplied here.
 
 No video has been recorded or attached. A local Sandbox validation build has human-reported login/quota display, relaunch persistence and post-deletion non-display checks; these are not final Store-build verification. The final Store archive is incomplete and the packaging manifest remains not-ready. This draft must be revised after final-build and review-access decisions, before any separately authorized submission.
+
+## Sample data mode walkthrough (added 2026-11-11, candidate)
+
+Implemented in source and covered by unit tests and an unsigned Store build. Not yet checked visually in a running app, and not verified in a signed Store build.
+
+1. Launch the app. A cat icon appears in the menu bar. No account is required to review the app.
+2. In the first-run setup (step 2, "Connect"), or in Settings > Accounts, click "Try with sample data". The button is shown only while no account is connected.
+3. Click the cat icon. A "Showing sample data" banner states that the numbers are not actual usage. No network requests, sign-in, or notifications occur in this mode.
+4. Use the "Sample state" menu in the banner to switch between "Plenty left", "Running low", and "Nearly depleted". The cat's state and the 5-hour / weekly remaining percentages and reset times change accordingly.
+5. Use the account picker to switch between "Sample account A" and "Sample account B". Settings lets you change the displayed limit and notification thresholds.
+6. Click "Exit sample data" in the banner (or in Settings > Accounts) to return to the normal, not-connected state. Sample data is never saved and does not persist across restarts.
+7. To use the real feature, choose "Add Account…" and sign in with an existing ChatGPT account through the official browser login.

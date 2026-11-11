@@ -61,3 +61,16 @@ UI名は[日本語](../Sources/AIUsageBuddy/Resources/ja.lproj/Localizable.strin
 初期設定は[UsageModels](../Sources/AIUsageBuddy/Models/UsageModels.swift)、通知条件は[NotificationPolicy](../Sources/AIUsageBuddy/Services/NotificationPolicy.swift)、認証RPCは[client](../Sources/AIUsageBuddy/Services/CodexAppServerClient.swift)、起動設定は[runtime policy](../Sources/AIUsageBuddy/Services/AppServerRuntimePolicy.swift)を参照する。
 権限の予定は[Store entitlements](../Store/AIUsageBuddyStore.entitlements)と[包装実装](../Tools/StorePackaging/prepare.py)に基づく。最終署名済み権限は未確認である。
 保存済み検証の限界は[提出準備状況](store-submission-readiness.md)と[privacy inventory](store-privacy-data-inventory.md)を参照する。
+
+## 2026-11-11追記：サンプルデータ表示の実装
+
+ユーザーの決定により、Store版だけで有効なサンプルデータ表示（デモモード）を実装した。
+入口は初回セットアップと設定のアカウント欄の「サンプルデータで試す / Try with sample data」で、実アカウント未接続のときだけ表示する。
+表示中は「サンプルデータ表示中／実際の利用状況ではありません」のバナーを出し、通信、helper起動、認証、保存、実通知を行わない。
+残量シナリオ3種とサンプルアカウント2件を切り替えられ、終了または再起動で通常状態へ戻る。
+上記の「既存のサンプル画面はない。架空のsample UIを作らない」は当時の方針の記録であり、現在は明示表示付きのサンプルデータ表示が存在する。
+サンプル値を公式取得結果として見せない方針は変わらない。
+確認済みは単体テスト206件／19 suitesの成功と、未署名のStore Debug／Releaseビルドの成功までである。
+実行中アプリでの目視確認、署名済みStore buildでの確認は未実施である。
+Appleによるデモの事前承認は得ておらず、2.1(a)のprior approval条件は未解消のままである。
+英語の操作手順は[Review Notes候補](app-review-notes-en.md)の末尾に追加した。

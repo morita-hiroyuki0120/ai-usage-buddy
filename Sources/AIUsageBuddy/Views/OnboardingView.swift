@@ -142,7 +142,24 @@ struct OnboardingView: View {
                 } label: {
                     Label(L("onboarding.connect.action"), systemImage: "person.crop.circle.badge.plus")
                 }
+                .disabled(model.isSampleMode)
                 Text(L("onboarding.connect.optional"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if model.isSampleMode {
+                Text(L("sample.onboarding.active"))
+                    .font(.callout)
+                SampleModeBanner(model: model)
+            } else if model.canStartSampleMode {
+                Divider()
+                Button {
+                    model.startSampleMode()
+                } label: {
+                    Label(L("sample.start"), systemImage: "flask")
+                }
+                Text(L("sample.start.note"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

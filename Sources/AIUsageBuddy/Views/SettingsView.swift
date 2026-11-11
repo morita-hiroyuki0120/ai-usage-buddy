@@ -62,6 +62,13 @@ struct SettingsView: View {
 
     private var accountSection: some View {
         Section(L("settings.accounts")) {
+            if model.isSampleMode {
+                SampleModeBanner(model: model)
+                Text(L("sample.settings.note"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             ForEach(model.accounts) { account in
                 accountRow(account)
             }
@@ -74,12 +81,26 @@ struct SettingsView: View {
 
             loginFlowView
 
-            Button {
-                Task { await model.beginAddAccount() }
-            } label: {
-                Label(L("settings.addAccount"), systemImage: "plus")
+            if !model.isSampleMode {
+                Button {
+                    Task { await model.beginAddAccount() }
+                } label: {
+                    Label(L("settings.addAccount"), systemImage: "plus")
+                }
+                .disabled(loginInProgress)
             }
-            .disabled(loginInProgress)
+
+            if model.canStartSampleMode {
+                Button {
+                    model.startSampleMode()
+                } label: {
+                    Label(L("sample.start"), systemImage: "flask")
+                }
+                .disabled(loginInProgress)
+                Text(L("sample.start.note"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -116,24 +137,26 @@ struct SettingsView: View {
                 }
             }
             Spacer()
-            Button {
-                renamingAccountID = account.id
-                renameText = account.displayName
-            } label: {
-                Image(systemName: "pencil")
-            }
-            .buttonStyle(.borderless)
-            .help(L("settings.rename"))
-            .accessibilityLabel(L("settings.rename"))
+            if !model.isSampleMode {
+                Button {
+                    renamingAccountID = account.id
+                    renameText = account.displayName
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .buttonStyle(.borderless)
+                .help(L("settings.rename"))
+                .accessibilityLabel(L("settings.rename"))
 
-            Button(role: .destructive) {
-                Task { await model.deleteAccount(account.id) }
-            } label: {
-                Image(systemName: "trash")
+                Button(role: .destructive) {
+                    Task { await model.deleteAccount(account.id) }
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .help(L("settings.delete"))
+                .accessibilityLabel(L("settings.delete"))
             }
-            .buttonStyle(.borderless)
-            .help(L("settings.delete"))
-            .accessibilityLabel(L("settings.delete"))
         }
     }
 
@@ -172,7 +195,7 @@ struct SettingsView: View {
         Section(L("settings.selectedAccount")) {
             if let account = model.selectedAccount {
                 Picker(L("settings.displayLimit"), selection: Binding(
-                    get: { model.settingsStore.displayLimit(for: account.id) },
+                    get: { model.displayLimit(for: account.id) },
                     set: { model.setDisplayLimit($0, for: account.id) }
                 )) {
                     Text(L(QuotaLimitKind.fiveHour.localizedNameKey)).tag(QuotaLimitKind.fiveHour)
@@ -471,7 +494,7 @@ struct SettingsView: View {
                 }
             }
             #endif
-            if let completed = model.lastRefreshCompletedAt {
+            if !model.isSampleMode, let completed = model.lastRefreshCompletedAt {
                 LabeledContent(L("popover.lastFetched"), value: UsageFormatter.fetchedDateTime(completed))
             }
         }
