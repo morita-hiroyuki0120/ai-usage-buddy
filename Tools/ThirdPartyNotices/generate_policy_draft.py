@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draft-only wrapper that applies the 2026-11-11 human policy decisions (Q2, Q3, Q5).
+"""Draft-only wrapper that applies the 2026-11-11 human policy decisions (Q2, Q3, Q5, Q12-Q16).
 
 It reuses scripts/generate-third-party-notices.py unchanged and adds an explicit,
 hash-pinned policy manifest on top of the standard-terms draft.
@@ -42,6 +42,35 @@ def _crate_members(archive):
             if member.isfile() and "/" in member.name:
                 files[member.name.split("/", 1)[1]] = tar.extractfile(member).read()
     return files
+
+
+def leading_comment_region(data):
+    """Maximal leading run of blank/line-comment lines, without trailing blank lines (exact bytes)."""
+    kept = []
+    for line in data.splitlines(keepends=True):
+        if line.strip() == b"" or line.startswith(b"//"):
+            kept.append(line)
+        else:
+            break
+    while kept and kept[-1].strip() == b"":
+        kept.pop()
+    return b"".join(kept)
+
+
+def _declared_license(manifest_bytes, workspace_bytes, name, version):
+    """(package.license, package.version) with workspace inheritance resolved from the pinned workspace manifest."""
+    package = tomllib.loads(manifest_bytes.decode("utf-8"))["package"]
+    workspace = None
+    if workspace_bytes is not None:
+        workspace = tomllib.loads(workspace_bytes.decode("utf-8"))["workspace"]["package"]
+    def resolve(field):
+        value = package[field]
+        if isinstance(value, dict):
+            g.need(value == {"workspace": True} and workspace is not None, "policy manifest inherits without workspace")
+            return workspace[field]
+        return value
+    g.need(package["name"] == name, "policy manifest package name mismatch")
+    return resolve("license"), resolve("version")
 
 
 def apply_policy(root, components, input_refs, relative):
@@ -170,6 +199,159 @@ def apply_policy(root, components, input_refs, relative):
             "licenseSelection": {"declaredRaw": declared, "selected": entry["selected"],
                 "notSelected": sorted(entry["notSelected"]), "approvalItem": entry["approvalItem"],
                 "interpretation": "Human policy selection recorded; upstream texts of all alternatives are kept; not a legal conclusion."}}
+    # Q12: replace the root-snapshot commit with the crate's publish-time commit (every published member compared).
+    for entry in manifest.get("commitCorrections", []):
+        identity, component, lock = target("correction", entry)
+        crate = crate_files(identity, lock)
+        review = component.get("historicalSupplementReview")
+        g.need(review is not None and review["commit"] == entry["previousCommit"] and
+               GITHUB_COMMIT.fullmatch(entry["commit"]) and entry["commit"] != entry["previousCommit"] and
+               entry["repository"] == review["sourceSnapshotRepository"] and
+               entry["pathInVcs"] == review["pathInVcs"] and
+               component.get("commitCorrectionReview") is None, "policy correction previous/new commit mismatch")
+        repo = entry["repository"].split("github.com/")[1]
+        directory = entry["pathInVcs"]
+        generated = {"Cargo.toml", "Cargo.lock", ".cargo_vcs_info.json"}
+        expected = {m: directory + "/" + ("Cargo.toml" if m == "Cargo.toml.orig" else m)
+                    for m in crate if m not in generated}
+        listed = {c["crateMember"]: c["sourcePath"] for c in entry["crateMemberEquivalence"]}
+        g.need(len(listed) == len(entry["crateMemberEquivalence"]) and listed == expected and "Cargo.toml.orig" in listed,
+               "policy correction does not cover every published member")
+        for check in entry["crateMemberEquivalence"]:
+            body = _read(root, check["path"], check["sha256"], check["size"])
+            g.need(crate[check["crateMember"]] == body, "policy correction crate member differs from fixed commit file")
+            refs.append({"path": check["path"], "sha256": check["sha256"]})
+        old_prefix = f"https://raw.githubusercontent.com/{repo}/{entry['previousCommit']}/"
+        files = {f["sourcePath"]: f for f in entry["rootFiles"]}
+        g.need(len(files) == len(entry["rootFiles"]) and
+               {e["publicPath"] for e in component["evidence"] if e["sourceURL"].startswith(old_prefix)} == set(files),
+               "policy correction root files do not match previous-commit evidence")
+        evidence, changed = [], []
+        for e in component["evidence"]:
+            if not e["sourceURL"].startswith(old_prefix):
+                evidence.append(e)
+                continue
+            f = files[e["publicPath"]]
+            body = _read(root, f["path"], f["sha256"], f["size"])
+            old = g.safe_file(root, e["path"]).read_bytes()
+            g.need(e["sourceURL"] == old_prefix + e["publicPath"], "policy correction previous URL mismatch")
+            if e["role"] == "license-text-candidate":
+                g.need(old == body, "policy correction license text differs from previously saved text")
+            else:
+                g.need(e["role"] == "notice-or-copyright-candidate", "policy correction replaces an unexpected role")
+                if old != body:
+                    changed.append({"publicPath": e["publicPath"], "previousSHA256": g.digest(old), "sha256": f["sha256"]})
+            refs.append({"path": f["path"], "sha256": f["sha256"]})
+            evidence.append({**e, "path": f["path"], "sha256": f["sha256"], "size": f["size"],
+                             "sourceURL": f"https://raw.githubusercontent.com/{repo}/{entry['commit']}/{e['publicPath']}"})
+        updated[identity] = {**component, "evidence": evidence,
+            "issues": [*component["issues"], "commit-replaced-by-approved-policy-publish-time-commit-review-pending"],
+            "commitCorrectionReview": {
+                "previousCommit": entry["previousCommit"], "commit": entry["commit"], "repository": entry["repository"],
+                "pathInVcs": directory, "snapshotManifestVersion": entry["snapshotManifestVersion"],
+                "comparedPublishedMembers": len(listed),
+                "verified": "every published member except generated Cargo.toml/Cargo.lock equals the fixed-commit file byte-for-byte (Cargo.toml.orig vs Cargo.toml); license text bytes equal the previously saved bytes",
+                "changedNoticeTexts": changed, "notes": entry["notes"],
+                "interpretation": "Publish-time commit inferred from path history and byte comparison (the .crate has no .cargo_vcs_info.json); applicability, copyright and NOTICE review remain pending."}}
+
+    # Q13: keep the published declaration and the repository declaration side by side; nothing is selected or rewritten.
+    for entry in manifest.get("declarationRecords", []):
+        identity, component, lock = target("declaration", entry)
+        crate = crate_files(identity, lock)
+        g.need(component["spdxManifestRaw"] == entry["declaredRaw"] != entry["repositoryDeclaredRaw"] and
+               "OR" in entry["repositoryDeclaredRaw"], "policy declaration record mismatch")
+        published, _ = _declared_license(crate["Cargo.toml"], None, identity[0], identity[1])
+        g.need(published == entry["declaredRaw"], "policy published manifest declaration mismatch")
+        orig = tomllib.loads(crate["Cargo.toml.orig"].decode("utf-8"))["package"]["license"]
+        g.need(orig == {"workspace": True}, "policy original manifest does not inherit the workspace license")
+        root_manifest = _read(root, entry["workspaceManifest"]["path"], entry["workspaceManifest"]["sha256"],
+                              entry["workspaceManifest"]["size"])
+        g.need(tomllib.loads(root_manifest.decode("utf-8"))["workspace"]["package"]["license"] ==
+               entry["repositoryDeclaredRaw"], "policy repository declaration mismatch")
+        refs.append({"path": entry["workspaceManifest"]["path"], "sha256": entry["workspaceManifest"]["sha256"]})
+        updated[identity] = {**updated.get(identity, component),
+            "declarationRecord": {"approvalItem": entry["approvalItem"], "publishedManifestDeclaration": entry["declaredRaw"],
+                "repositoryWorkspaceDeclaration": entry["repositoryDeclaredRaw"],
+                "repositoryManifestSHA256": entry["workspaceManifest"]["sha256"],
+                "repositoryManifestCommit": entry["workspaceManifest"]["commit"],
+                "interpretation": "Both declarations and both upstream texts are kept; no alternative is selected and no declaration is rewritten. Why the published declaration differs was not established."}}
+
+    # Q14/Q15: record why the repository-level LICENSE reaches the package (placement vs. declaration).
+    for entry in manifest.get("scopeResolutions", []):
+        identity, component, _ = target("scope", entry)
+        issues = component["issues"]
+        g.need(issues.count("repository-license-scope-unreviewed") == 1 and
+               component["spdxManifestRaw"] == entry["declaredRaw"], "policy scope target has no exactly-once open scope issue")
+        ws = entry.get("workspaceManifest")
+        ws_bytes = _read(root, ws["path"], ws["sha256"], ws["size"]) if ws else None
+        m = entry["manifest"]
+        declared, version = _declared_license(_read(root, m["path"], m["sha256"], m["size"]), ws_bytes, identity[0], identity[1])
+        g.need(declared == entry["declaredRaw"] and version == identity[1], "policy scope manifest declaration/version mismatch")
+        refs.extend({"path": x["path"], "sha256": x["sha256"]} for x in ([m, ws] if ws else [m]))
+        bodies = {}
+        for f in entry["licenseFiles"]:
+            body = _read(root, f["path"], f["sha256"], f["size"])
+            bodies[f["sourcePath"]] = body
+            if f["relation"] == "displayed-evidence":
+                g.need(any(e["role"] == "license-text-candidate" and e["publicPath"] == f["sourcePath"] and
+                           e["sha256"] == f["sha256"] for e in component["evidence"]),
+                       "policy scope license file is not the displayed evidence")
+            else:
+                g.need(f["relation"] == "git-symlink-target-text" and body == b"../LICENSE", "policy scope symlink text mismatch")
+            refs.append({"path": f["path"], "sha256": f["sha256"]})
+        g.need(any(f["relation"] == "displayed-evidence" for f in entry["licenseFiles"]), "policy scope has no displayed license")
+        for needle in entry.get("mustContain", []):
+            g.need(sum(needle.encode("utf-8") in b for b in bodies.values()) >= 1, "policy scope expected license wording absent")
+        for c in entry.get("corroboration", []):
+            archive = _read(root, c["archive"], c["archiveSHA256"], c["archiveSize"])
+            g.need(_crate_members(archive).get(c["member"]) == bodies[c["equalsLicenseSourcePath"]],
+                   "policy scope published crate member differs from the pinned LICENSE")
+            refs.append({"path": c["archive"], "sha256": c["archiveSHA256"]})
+        updated[identity] = {**updated.get(identity, component),
+            "issues": [i for i in issues if i != "repository-license-scope-unreviewed"] +
+                      ["scope-resolution-recorded-by-approved-policy"],
+            "scopeResolution": {"approvalItem": entry["approvalItem"], "declaredRaw": entry["declaredRaw"],
+                "basis": "LICENSE placement in the pinned repository matches the package manifest declaration (workspace inheritance resolved from the pinned workspace manifest where used)",
+                "manifestPath": m["sourcePath"], "manifestSHA256": m["sha256"],
+                "licenseFiles": [{k: f[k] for k in ("sourcePath", "sha256", "size", "relation")} for f in entry["licenseFiles"]],
+                "publishedCrateCorroboration": [{k: c[k] for k in ("member", "equalsLicenseSourcePath", "archiveSHA256")}
+                                                for c in entry.get("corroboration", [])],
+                "recordedObservations": entry["observations"], "remainingOpen": entry["remainingOpen"],
+                "interpretation": "Scope basis recorded from LICENSE placement and the declared license; not a legal conclusion. Copyright-holder completeness, applicability and NOTICE review remain pending."}}
+
+    # Q16: exact leading comment region of a pinned git source file (third-party header kept unmodified).
+    for entry in manifest.get("gitSourceHeaders", []):
+        identity, component, _ = target("githeader:" + entry["sourcePath"], entry)
+        parsed = identity[2]
+        g.need(parsed.startswith("git+https://github.com/") and "#" in parsed, "policy git header target is not a GitHub git dependency")
+        commit = parsed.split("#", 1)[1]
+        repo = parsed[len("git+https://github.com/"):].split("?", 1)[0].split("#", 1)[0].removesuffix(".git")
+        g.need(GITHUB_COMMIT.fullmatch(commit) and component["sourceURL"] == f"https://github.com/{repo}/tree/{commit}",
+               "policy git header source mismatch")
+        source = _read(root, entry["sourceFile"]["path"], entry["sourceFile"]["sha256"], entry["sourceFile"]["size"])
+        header = _read(root, entry["headerPath"], entry["headerSHA256"], entry["headerSize"])
+        region = leading_comment_region(source)
+        g.need(header == region and source.startswith(header) and header.endswith(b"\n") and
+               not header.endswith(b"\n\n") and header.startswith(b"//") and b"Copyright" in header and
+               source[len(header):len(header) + 1] == b"\n" and
+               source[len(header) + 1:len(header) + 2] not in (b"\n", b"") and
+               not source[len(header) + 1:].startswith(b"//"),
+               "policy git header is not the exact leading comment region of the pinned source file")
+        header.decode("utf-8", errors="strict")
+        url = f"https://raw.githubusercontent.com/{repo}/{commit}/{entry['sourcePath']}"
+        g.need(entry["sourceURL"] == url, "policy git header source URL mismatch")
+        refs.extend([{"path": entry["headerPath"], "sha256": entry["headerSHA256"]},
+                     {"path": entry["sourceFile"]["path"], "sha256": entry["sourceFile"]["sha256"]}])
+        base = updated.get(identity, component)
+        updated[identity] = {**base,
+            "evidence": [*base["evidence"], {"path": entry["headerPath"], "sha256": entry["headerSHA256"],
+                "size": entry["headerSize"], "publicPath": entry["sourcePath"], "sourceURL": url, "role": HEADER_ROLE}],
+            "gitSourceHeaderReview": {"approvalItem": entry["approvalItem"], "sourcePath": entry["sourcePath"],
+                "sourceFileSHA256": entry["sourceFile"]["sha256"], "headerSHA256": entry["headerSHA256"],
+                "headerSize": entry["headerSize"],
+                "derivation": "Exact leading line-comment region of the pinned file (blank lines inside the region kept, trailing blank line excluded); not license terms of the component; nothing added or edited.",
+                "holderYearNote": "Wording is shown as found in the file, including any typos; no holder or year is added."}}
+
     return [updated.get(tuple(c["lockIdentity"]), c) for c in components], refs
 
 
@@ -198,13 +380,24 @@ def finish(files, report, manifest):
     report["draftSHA256"], report["draftSize"] = g.digest(text), len(text)
     report["approvedPolicy"] = {"approval": manifest["policyApproval"], "licenseSelections": selections,
         "commitReplacements": [c["name"] + " " + c["version"] for c in report["components"] if c.get("commitReplacementReview")],
-        "sourceHeaders": [c["name"] + " " + c["version"] for c in report["components"] if c.get("sourceHeaderReview")]}
+        "sourceHeaders": [c["name"] + " " + c["version"] for c in report["components"] if c.get("sourceHeaderReview")],
+        "commitCorrections": [c["name"] + " " + c["version"] for c in report["components"] if c.get("commitCorrectionReview")],
+        "declarationRecords": [c["name"] + " " + c["version"] for c in report["components"] if c.get("declarationRecord")],
+        "scopeResolutions": [c["name"] + " " + c["version"] for c in report["components"] if c.get("scopeResolution")],
+        "gitSourceHeaders": [c["name"] + " " + c["version"] for c in report["components"] if c.get("gitSourceHeaderReview")]}
+    extra_fields = ("commitCorrectionReview", "declarationRecord", "scopeResolution", "gitSourceHeaderReview")
+    for c in report["components"]:
+        if c.get("scopeResolution") and "licenseEvidenceAvailability" in c:
+            c["licenseEvidenceAvailability"] = {**c["licenseEvidenceAvailability"],
+                "scopeReview": "scope-resolution-recorded-by-approved-policy"}
     unresolved = json.loads(files["unresolved-report.json"])
     byid = {c["identity"]: c for c in report["components"]}
     for item in unresolved["components"]:
-        for field in ("licenseSelection", "commitReplacementReview", "sourceHeaderReview"):
+        for field in ("licenseSelection", "commitReplacementReview", "sourceHeaderReview", *extra_fields):
             if field in byid[item["identity"]]:
                 item[field] = byid[item["identity"]][field]
+        if byid[item["identity"]].get("scopeResolution") and "licenseEvidenceAvailability" in item:
+            item["licenseEvidenceAvailability"] = byid[item["identity"]]["licenseEvidenceAvailability"]
     def encode(value):
         return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode()
     return {"THIRD-PARTY-NOTICES.draft.txt": text, "internal-manifest.json": encode(report),

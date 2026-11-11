@@ -142,6 +142,33 @@ Meta系6件は、公開直前のcommitで`.crate`内の全ファイルがbyte一
 草稿は再生成しておらず、policy manifestも変更していない。
 草稿は`draft-not-approved`、`distributionStatus`は`not-ready`のままで、承認receiptは発行していない。
 
+## 2026-11-11のQ12〜Q16の承認後の状態
+
+判断シートのQ12〜Q16は、2026-11-11にユーザー（人間）が「推奨どおりでOK」と回答して承認した。
+承認は方針の承認であり、最終本文の承認でも承認receiptの発行でもない。
+上の「追加調査」節の「未承認」「草稿は再生成していない」は、調査時点の記録として残している。
+
+最新の草稿は[`build/third-party-notices-app-server-draft-20261111-2/`](../build/third-party-notices-app-server-draft-20261111-2/validation.json)である。
+入力は[`build/license-policy-supplement-20261111-2/manifest.json`](../build/license-policy-supplement-20261111-2/manifest.json)で、Q2・Q3・Q5の内容を引き継いだ。
+907 component、496本文、標準条項6件／10参照、NOTICE/copyright参照145件、上流全文候補なし5件である。
+`THIRD-PARTY-NOTICES.draft.txt`のSHA-256は`fd9561946bc9f58bf9431a6714fda951ed83ae8233c8afe5a4955b9eff3c82bc`（2,163,071 bytes）である。
+旧草稿20261111からの差分は、Q12〜Q16の対象15 componentだけである。
+本文の追加は3つで、nucleoの2つのsource headerと、strong_hash_deriveの公開時点commitのNOTICE（227 bytes）である。
+旧草稿の本文は、1つも削っていない。
+
+- Q12：Meta系6件の根拠commitを、crateごとの公開時点commitへ差し替えた。公開memberの全件byte一致を生成器が確認する。
+- Q12の注意：strong_hash_deriveの公開時点commitのNOTICEは、従前の`4f1406c`のNOTICEと異なる（probminhashの段落がない）。判断シートの表の「NOTICEは変わらない」は、この1件に当てはまらなかった。承認したcommitのbytesのとおり表示している。
+- Q13：allocative系2件の宣言`Apache-2.0`とrepositoryの`MIT OR Apache-2.0`を両方記録した。選択も書き換えもしていない。
+- Q14・Q15：scope未確認9件を「scope解消の記録あり」にした。根拠は、LICENSEの配置、manifestの宣言、公開crateとのbyte一致である。rmcpのMIT移行中の注記は、原文のまま表示している。
+- Q16：nucleoのboxcar.rsとpar_sort.rsの先頭コメントを、改変なしで加えた。
+
+`distribution-applicability-copyright-NOTICE-review-pending`は907件すべてに残る。
+Meta系6件の`historical-snapshot-scope-and-NOTICE-review-pending`も残した。
+fixtureテストは既存39件に新規19件を加えた58件が成功した。
+既存の`build/`配下109,162 fileのSHA-256は、生成前後で変わっていない。
+Meta系6件の公開時点commitは、path履歴とbyte比較による推定で、公開時の実際のcommitは確認できていない。
+草稿は`draft-not-approved`、`distributionStatus`は`not-ready`のままで、承認receiptは発行していない。
+
 [draft]: ../build/third-party-notices-draft-20261023-3/internal-manifest.json
 [graph]: ../build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/target-closure-followup/target-closure-inventory.json
 [s2]: ../build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/license-supplement-20261023-2/manifest.json

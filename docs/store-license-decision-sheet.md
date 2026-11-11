@@ -20,11 +20,11 @@
 - [x] Q9：上流の消失に備え、source案内に「依頼があれば提供する」旨の窓口を載せるか。 2026-11-11 ユーザー承認（ユーザーの回答：窓口はGitHubリポジトリのIssue。個人の連絡先は載せない）
 - [x] Q10：nucleoはGitHubのtree URLと固定commitで案内し、symlink入りarchiveを自社配布物に同梱しない方針を承認するか。 2026-11-11 ユーザー承認
 - [x] Q11：MPL-2.0とApple標準EULAの関係を、配布者が確認するか。 2026-11-11 ユーザー承認（ユーザーの回答：配布者であるユーザーが確認済みとして進める。調査担当は確認しておらず、法的適合を判断していない）
-- [ ] Q12：Meta系6件（D9）の根拠commitを、4f1406cからcrateごとの公開時点commit（下の表）へ差し替える補完manifestを作る方針を承認するか。
-- [ ] Q13：allocativeとallocative_deriveは、公開manifestの宣言`Apache-2.0`をそのまま表示し、repositoryの`MIT OR Apache-2.0`とsource headerのdual-license記述も併記する現行構成のままでよいか。
-- [ ] Q14：mxc系3件、tokio-tungstenite、tungstenite、nucleo、nucleo-matcherの`repository-license-scope-unreviewed`を、下の根拠で解消済みと記録するか。
-- [ ] Q15：rmcpとrmcp-macrosは、MIT移行中の注記とMIT全文を含むroot LICENSEを原文のまま表示する構成でよいか。
-- [ ] Q16：nucleoの表示に、`src/boxcar.rs`と`src/par_sort.rs`の冒頭にある第三者copyrightとpermission本文を、source headerとして加えるか。
+- [x] Q12：Meta系6件（D9）の根拠commitを、4f1406cからcrateごとの公開時点commit（下の表）へ差し替える補完manifestを作る方針を承認するか。 2026-11-11 ユーザー承認（「推奨どおりでOK」との回答）
+- [x] Q13：allocativeとallocative_deriveは、公開manifestの宣言`Apache-2.0`をそのまま表示し、repositoryの`MIT OR Apache-2.0`とsource headerのdual-license記述も併記する現行構成のままでよいか。 2026-11-11 ユーザー承認（「推奨どおりでOK」との回答）
+- [x] Q14：mxc系3件、tokio-tungstenite、tungstenite、nucleo、nucleo-matcherの`repository-license-scope-unreviewed`を、下の根拠で解消済みと記録するか。 2026-11-11 ユーザー承認（「推奨どおりでOK」との回答）
+- [x] Q15：rmcpとrmcp-macrosは、MIT移行中の注記とMIT全文を含むroot LICENSEを原文のまま表示する構成でよいか。 2026-11-11 ユーザー承認（「推奨どおりでOK」との回答）
+- [x] Q16：nucleoの表示に、`src/boxcar.rs`と`src/par_sort.rs`の冒頭にある第三者copyrightとpermission本文を、source headerとして加えるか。 2026-11-11 ユーザー承認（「推奨どおりでOK」との回答）
 
 ## 2026-11-11の承認結果と反映状況
 
@@ -43,6 +43,30 @@ Q1〜Q3、Q5〜Q8、Q10は「推奨どおりでOK」との回答で、Q4、Q9、
 - Q11：ユーザーの回答を記録しただけで、MPL-2.0とApple標準EULAの関係を調査担当は確認していない。
 
 「推奨」欄と判断表は、承認前の記録として残している。
+
+### Q12〜Q16の承認と反映（2026-11-11）
+
+Q12〜Q16も、2026-11-11にユーザー（人間）が「推奨どおりでOK」と回答して承認した。
+承認は方針の承認であり、最終本文の承認でも、承認receiptの発行でもない。
+`config/EmbeddedAppServer.json`の`distributionStatus`は`not-ready`のままで、草稿は`draft-not-approved`のままである。
+各crateの`distribution-applicability-copyright-NOTICE-review-pending`は外していない。
+
+反映した成果物は次のとおりである。
+
+- policy manifest：[`build/license-policy-supplement-20261111-2/manifest.json`](../build/license-policy-supplement-20261111-2/manifest.json)に、Q2・Q3・Q5の内容を引き継いでQ12〜Q16を加えた。
+- 新草稿：[`build/third-party-notices-app-server-draft-20261111-2/`](../build/third-party-notices-app-server-draft-20261111-2/validation.json)に、907 component、496本文で生成した。
+- Q12：Meta系6件の根拠commitを`4f1406c`からcrateごとの公開時点commitへ差し替えた。`.crate`の公開memberのうち生成物（`Cargo.toml`、`Cargo.lock`）を除く全件が、固定commitのfileとbyte一致することを生成器が確認する。LICENSE-APACHEとLICENSE-MITのbytesは従前と同じである。
+- Q12の注意：strong_hash_deriveの公開時点commit（`2f0651c`）のroot NOTICE（227 bytes、`4d21d639…`）は、従前の`4f1406c`のNOTICE（`b3355ad3…`）と異なる。probminhashに関する段落がない。この表の「LICENSE／NOTICEの本文は変わらない」は、この1件には当てはまらなかった。草稿は、承認したcommitのbytesのとおり、strong_hash_deriveに古い方のNOTICEを表示する。
+- Q12の扱い：履歴の記録と`historical-snapshot-scope-and-NOTICE-review-pending`は残した。NOTICEの適用範囲のレビューが未完のためである。
+- Q13：allocativeとallocative_deriveは、公開manifestの`Apache-2.0`とrepository workspaceの`MIT OR Apache-2.0`を、`declarationRecord`として両方記録した。宣言は書き換えず、どちらも選択していない。公開本文は変えていない。
+- Q14：mxc系3件、tokio-tungstenite、tungstenite、nucleo、nucleo-matcherの`repository-license-scope-unreviewed`を、`scope-resolution-recorded-by-approved-policy`へ置き換えた。根拠は、保存したmanifestの宣言、LICENSEの配置、公開crateとのbyte一致である。
+- Q15：rmcpとrmcp-macrosも同じ記録にした。MIT移行中の注記とMIT全文を含むroot LICENSEは、原文のまま表示している。
+- Q16：nucleoに、`src/boxcar.rs`（22行）と`src/par_sort.rs`（32行）の先頭のコメント領域を、改変せずsource headerとして加えた。par_sort.rsは、先頭の`//!`の説明（std由来であること、nucleoでの改変）と空行を挟んだcopyright部分を、領域としてまとめて含む。boxcar.rsの原文にある綴り（`licenes`）もそのままである。holderと年は補作していない。
+- 旧草稿20261111との差分は、上記15 componentだけである。`validation.json`に、component数、本文数、text参照のhashとsize照合を保存した。
+
+Q14・Q15の「解消」は、LICENSEの配置と宣言の対応を記録したという意味である。
+copyright holderの網羅、配布義務の充足、NOTICEの適用は、確認していない。
+mxc系の`.rs`のheader件数など、一部の観察は記録のみで、生成器は再検証していない。
 
 ## 残件ごとの判断表
 
@@ -111,6 +135,7 @@ D9のMeta系6件とD11のscope未確認9件を、公開情報のGETだけで調�
 取得物とhashは[`build/license-decision-check-20261111-2/`](../build/license-decision-check-20261111-2/)に保存した（SHA256SUMS.txtと[findings-20261111-2.json](../build/license-decision-check-20261111-2/findings-20261111-2.json)を含む）。
 ここに書いた結論は根拠の整理であり、法的適合の断言ではない。
 草稿は再生成していない。policy manifestへの反映は、承認後に別途行う。
+（追記：Q12〜Q16の承認後に反映した。上の「Q12〜Q16の承認と反映」を参照。この行は調査時点の記録として残す。）
 `config/EmbeddedAppServer.json`は`not-ready`、草稿は`draft-not-approved`のままである。
 
 ### A. Meta系6件（D9）

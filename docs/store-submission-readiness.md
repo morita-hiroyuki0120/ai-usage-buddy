@@ -109,3 +109,17 @@ Meta系6件は、公開直前のcommitで`.crate`内の全ファイルがbyte一
 新しい承認質問Q12〜Q16は、未承認である。
 草稿は再生成しておらず、policy manifestも変更していない。
 草稿は`draft-not-approved`、`distributionStatus`は`not-ready`のままで、承認receiptは発行していない。
+
+## 2026-11-11のQ12〜Q16の承認後の状態
+
+判断シートのQ12〜Q16も、2026-11-11にユーザー（人間）が承認した。
+承認は方針の承認であり、最終本文の承認ではない。
+上の「追加調査」節の「未承認」は、調査時点の記録として残している。
+最新の[notices草稿](../build/third-party-notices-app-server-draft-20261111-2/validation.json)は907 component、496本文で、`draft-not-approved`である。
+`THIRD-PARTY-NOTICES.draft.txt`のSHA-256は`fd9561946bc9f58bf9431a6714fda951ed83ae8233c8afe5a4955b9eff3c82bc`である。
+旧草稿20261111からの差分は、Q12〜Q16の対象15 componentだけである。
+Meta系6件の根拠commit差し替え、scope未確認9件の解消記録、nucleoの第三者headerの追加が含まれる。
+strong_hash_deriveだけは、公開時点commitのNOTICEが従前と異なるため、表示するNOTICEが変わった。
+承認receiptは発行しておらず、`distributionStatus`は`not-ready`のままである。
+各crateの配布時の適用、copyright、NOTICEのレビューは未完である。
+正式noticesとsource案内の本文承認が未了のため、前節のチェックは引き続き付けない。

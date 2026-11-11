@@ -196,3 +196,27 @@ PYTHONDONTWRITEBYTECODE=1 python3 Tools/ThirdPartyNotices/generate_policy_draft.
   --standard-license-supplement build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/standard-license-supplement-20261024/manifest.json \
   --policy-supplement build/license-policy-supplement-20261111/manifest.json
 ```
+
+## 2026-11-11 承認済み方針の反映（Q12〜Q16）
+
+`generate_policy_draft.py`のmanifestに、次の任意の節を加えた。
+Q2・Q3・Q5の節と動作は変えていない。
+どの節も、hashを固定した資料だけを使い、ネットワークは使わない。
+
+- `commitCorrections`（Q12）：履歴上の根拠commitを、crateの公開時点commitへ差し替える。`.crate`の通常memberのうち生成物（`Cargo.toml`、`Cargo.lock`、`.cargo_vcs_info.json`）を除く全件を列挙させ、固定commitのfileとbyte比較する。列挙の過不足は失敗とする。旧commit URLのevidenceは、すべて新commitのfileへ置き換える。license-text-candidateは従前の保存bytesと同一であることを要求し、NOTICEの差は`changedNoticeTexts`に記録する。履歴と`historical-snapshot-scope-and-NOTICE-review-pending`は残す。
+- `declarationRecords`（Q13）：公開manifestの宣言と、pinned commitのworkspace宣言を、選択も書き換えもせず記録する。公開`Cargo.toml.orig`がworkspace継承であることを確認する。
+- `scopeResolutions`（Q14・Q15）：`repository-license-scope-unreviewed`が1件だけある対象に限り、manifestの宣言、LICENSEの配置、公開crateとのbyte一致、必要な文言の存在を確認して、解消の記録に置き換える。workspace継承はpinned workspace manifestで解決し、無ければ失敗とする。
+- `gitSourceHeaders`（Q16）：git依存のpinned fileの先頭コメント領域を、改変なしのsource headerとして加える。領域は、先頭の空行・`//`行の連続から、末尾の空行を除いたものである。headerはfile先頭から始まり、領域と完全に一致し、`Copyright`を含み、直後が空行1つとコードであることを要求する。短い、削られた、編集された、空行やコードを含む、先頭を飛ばしたheaderは失敗とする。同じcomponentに複数のheaderを加えられる。
+
+出力は常に`draft-not-approved`かつ`not-ready`で、方針の承認は本文の承認ではない。
+`distribution-applicability-copyright-NOTICE-review-pending`は外さない。
+fixtureは既存39件に`tests/test_policy_q12_q16.py`の19件を加えた58件が成功した。
+`build/third-party-notices-app-server-draft-20261111-2/`へ生成し、907 component、496本文、旧草稿からの差分15 componentを`validation.json`に保存した。
+manifestの作成に使った手順は、`build/license-policy-supplement-20261111-2/record-scripts-not-executed-from-here/`に記録だけ残した。
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 Tools/ThirdPartyNotices/generate_policy_draft.py \
+  --output build/third-party-notices-app-server-draft-NEW \
+  --standard-license-supplement build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/standard-license-supplement-20261024/manifest.json \
+  --policy-supplement build/license-policy-supplement-20261111-2/manifest.json
+```
