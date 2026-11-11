@@ -225,6 +225,7 @@ macOS、AI Usage Buddy、主言語日本語、会社PUREROAST&BREW, LIMITED LIAB
 accessは制限なしで、UIの制限ありはdisabledだった。
 一覧reload後にAI Usage Buddy、macOS 1.0、提出準備中を確認し、アプリ情報画面でName、Bundle ID、SKU、Apple ID 6826562310、主言語の一致を確認した。
 既定Store versionは1.0で、project候補1.0.1/build 2との整合は未実施。
+（2026-11-11追記：project候補を1.0/build 2へ変更し整合済み。実archiveでの確認は未実施。）
 自動releaseは既定表示のままで変更も保存もしていない。
 無料価格等は未設定であり、upload、審査提出、公開は未実施である。
 

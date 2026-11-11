@@ -80,6 +80,21 @@ holder/year placeholderは未置換で、実copyrightや上流取得本文では
 この実装では上流6件の追加探索を行っておらず、表の具体的な未確認事項が解消したとは扱わない。
 詳細と固定URL、hash、sizeは[Tools README](../Tools/ThirdPartyNotices/README.md)と[新規草稿validation](../build/third-party-notices-app-server-standard-draft-20261024/validation.json)を参照する。
 
+## 2026-11-11の追記
+
+上流6件、SDK留保、版差、OR選択、NOTICE、MPL-2.0の12候補、nucleoのsymlinkを再調査し、承認用に[判断シート](store-license-decision-sheet.md)へまとめた。
+上の表と履歴は変更していない。
+現在状態の要点は次のとおりである。
+
+- display_container 0.9.0：crates.io公開と同日のgazebo commit `13efb6d415c4729178dfccc36fa9c87491f0813d`のmanifestが0.9.0で、`src/lib.rs`と`Cargo.toml`がcrateにbyte一致した。LICENSE-MITとLICENSE-APACHEも旧保存本文と同hashだった。版差は解消候補だが、補完manifestへの反映と承認は未実施。
+- fxhash：`lib.rs`のRust Project Developers headerが現行草稿のtextsにない。表示に加える提案を判断シートに記載した。
+- 他の4件（objc2-foundation、debugserver-types、eventsource-stream、io_tee）：crates.io metadata、READMEの宣言、GitHubのtop levelを再確認したが、新たな全文は見つからなかった。標準条項の参考併記と宣言の明記が提案の上限である。
+- Apple SDK留保：同じ`LICENSE.md`はobjc2-foundationに限らず、objc2-app-kit等にも及ぶ。
+- OR選択：COPYLEFT系の選択肢を含むのはself_cell（`Apache-2.0 OR GPL-2.0-only`）だけで、Apache-2.0の採用を推奨案とした。
+- nucleo：crates.ioのnucleo-matcher 0.3.1は固定commitと内容が異なり、代替にならない。
+- source案内：[改訂草稿](../build/source-availability-draft-20261111/SOURCE-AVAILABILITY.draft.txt)を新規に作成した。既存草稿は変更していない。
+- 上流の保守者への問い合わせは行っていない。生成器の再実行もしていない（fixture 34件は成功）。
+
 [draft]: ../build/third-party-notices-draft-20261023-3/internal-manifest.json
 [graph]: ../build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/target-closure-followup/target-closure-inventory.json
 [s2]: ../build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/license-supplement-20261023-2/manifest.json

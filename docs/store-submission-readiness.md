@@ -9,7 +9,7 @@ archive用の包装経路は実装済みだが、検証はfixtureと通常のuns
 
 | 項目 | 現物で確認できる状態と証拠の限界 |
 |---|---|
-| 本番候補と署名設定 | [project](../Store/AIUsageBuddy.xcodeproj/project.pbxproj)はBID `com.aiusagebuddy.app.store`、Team `9HYDLV4RY2`、候補version/build 1.0.1/2。app targetは1本で`SKIP_INSTALL=NO`。ReleaseはManual、distribution identity変数は空、profile UUID/specifierの明示はない。Explicit App ID登録済み。最新human承認に基づき親CUAがApp Store Connect recordを作成しApple ID `6826562310`を確認した。macOS、AI Usage Buddy、主言語日本語、会社PUREROAST&BREW, LIMITED LIABILITY COMPANY、BID一致、SKU `AIUsageBuddy-macOS`、access制限なし。既定Store version 1.0はproject候補と未整合。 |
+| 本番候補と署名設定 | [project](../Store/AIUsageBuddy.xcodeproj/project.pbxproj)はBID `com.aiusagebuddy.app.store`、Team `9HYDLV4RY2`、候補version/build 1.0/2（2026-11-11に1.0.1から変更）。app targetは1本で`SKIP_INSTALL=NO`。ReleaseはManual、distribution identity変数は空、profile UUID/specifierの明示はない。Explicit App ID登録済み。最新human承認に基づき親CUAがApp Store Connect recordを作成しApple ID `6826562310`を確認した。macOS、AI Usage Buddy、主言語日本語、会社PUREROAST&BREW, LIMITED LIABILITY COMPANY、BID一致、SKU `AIUsageBuddy-macOS`、access制限なし。既定Store version 1.0とproject候補は2026-11-11に1.0へ整合済み（実archiveでの確認は未実施）。 |
 | archive包装 | [shell入口](../scripts/prepare-store-archive.sh)と[Python実装](../Tools/StorePackaging/prepare.py)が存在する。Release install/archive時に固定0.163.0のsource commitと元tar hash、config全文hash、明示的review status、payloadのsizeとhashを検査する。現行not-readyは拒否する。承認済みreceiptを発行した証拠はない。 |
 | helperと本文の配置 | projectにarchive専用CopyFilesを登録済み。コピーしたhelperにad-hoc署名patternを設定し、CodeSignOnCopyで`Contents/Helpers/codex-app-server`へ配置する構成。appのLICENSE、helper root LICENSEとNOTICE、依存notices、source案内は`Contents/Resources/StoreNotices`へ配置する。元artifactを変更せず、helperをarchiveトップへ別installしない。実際の本番同梱は未検証。 |
 | entitlementsと署名順 | helperはsandboxとinheritの2権限完全一致。親はsandboxとnetwork client/serverの必須3権限に加え、Team/BIDへ束縛したidentity entitlementだけを許容する。wildcard、追加files権限、get-task-allow=trueは拒否する実装。helperを検証後にXcodeが親を署名する構成であり、profileを適用した最終内外署名の検証は未実施。[包装仕様](../Tools/StorePackaging/README.md) |
@@ -42,6 +42,14 @@ validationには出力と資料参照のhash/size検証、旧草稿15ファイ�
 source graph由来の保守的候補集合であり、実binary含有や法的適合の証明ではない。
 本文収集の進展を適用義務レビューや配布承認の完了とは扱わない。
 
+2026-11-11の追記：残件の再調査結果と承認用の質問は[判断シート](store-license-decision-sheet.md)にまとめた。
+標準条項併記後の草稿は907 components、492 texts、標準条項6件、全文候補なし6件である（上の491 textsは併記前の草稿）。
+display_containerの版差は、同日commitの照合により解消候補が見つかったが、補完manifestへの反映と承認は未実施である。
+source案内は[改訂草稿](../build/source-availability-draft-20261111/SOURCE-AVAILABILITY.draft.txt)を新規に作成し、2026-10-23の取得結果と2026-11-11のheader確認を反映した。
+既存の公開候補txtは変更していない。
+nucleoのsymlink入りarchiveは、URL案内にとどめる方針を判断シートで提案している。
+いずれも承認前であり、`draft-not-approved`と`distributionStatus: not-ready`は変わらない。
+
 旧release-unionの[草稿3 validation](../build/third-party-notices-draft-20261023-3/validation.json)と[生成完了marker](../build/third-party-notices-draft-20261023-3/GENERATION-COMPLETE.json)は保持している。
 同草稿の936 component、507 texts、全文候補なし8件、1729 refs、当時のgenerator fixture 19件という履歴を、app-server単独scopeの数値と混同しない。
 
@@ -64,7 +72,7 @@ MPL-2.0の12候補とself_cell等の選択ライセンスについて、同梱�
 ## 次に必要な承認と実作業
 
 - [ ] app-server単独scopeの残る6件の全文候補、SDK留保、版差、選択ライセンス、必要NOTICE、source入手案内の扱いを決める。正式noticesとsource案内の本文を人間が承認し、対象hashを束縛するreceiptを用意する。根拠未了のままreadyへ変更しない。
-- [ ] 登録済みExplicit App ID、生成済みprofile、承認後作成済みApp Store Connect recordを前提に署名workflowを確定する。profileのインストールと割当、既存証明書の割当、export方法とinstaller署名は未実施。Store version 1.0とproject候補1.0.1/2は未整合。無料価格等は未設定、自動releaseは既定表示のみで変更も保存もしていない。今回これらを決定しない。
+- [ ] 登録済みExplicit App ID、生成済みprofile、承認後作成済みApp Store Connect recordを前提に署名workflowを確定する。profileのインストールと割当、既存証明書の割当、export方法とinstaller署名は未実施。Store version 1.0とproject候補は2026-11-11に1.0/2へ整合済み。無料価格等は未設定、自動releaseは既定表示のみで変更も保存もしていない。今回これらを決定しない。
 - [ ] 実archive/exportの実行承認後、新規出力で包装経路を検証する。archiveとexport後の両appについて、helperの元artifact対応、自己完結性、本文同梱、内外の署名、Team/BID、entitlements、archiveトップがappのみであることを確認する。
 - [ ] [固定source監査](store-helper-data-flow-audit.md)の確認済み範囲と留保を踏まえ、提出対象runtimeの通信とmodel catalog取得、plugin/MCP制限を判断する。監査は一部完了しているが実通信と全下流は未確認である。最終署名構成でログイン、quota、再起動、削除を検証し、ローカルUI報告や設定引数だけで全通信抑制やremote失効を断言しない。
 - [ ] [privacy公開計画](privacy-publication-plan.md)に沿って本文掲載の人間承認と公開操作の別途承認を得る。実URL、アプリ内導線、第三者helperとWebホストを区別したApp Privacy回答を整える。StoreのGitHub更新確認無効をDirect版の挙動と混同しない。
