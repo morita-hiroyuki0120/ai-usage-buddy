@@ -148,7 +148,10 @@ struct PopoverView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                        Text(UsageFormatter.resetDateTime(resetAt))
+                        Text(UsageFormatter.resetDateTime(
+                            resetAt,
+                            locale: Locale(identifier: model.localization.currentLanguage == .japanese ? "ja_JP" : "en_US")
+                        ))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {

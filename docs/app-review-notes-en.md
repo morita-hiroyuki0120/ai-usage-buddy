@@ -30,7 +30,7 @@ Implemented in source and covered by unit tests and an unsigned Store build. Not
 1. Launch the app. A cat icon appears in the menu bar. No account is required to review the app.
 2. In the first-run setup (step 2, "Connect"), or in Settings > Accounts, click "Try with sample data". The button is shown only while no account is connected.
 3. Click the cat icon. A "Showing sample data" banner states that the numbers are not actual usage. No network requests, sign-in, or notifications occur in this mode.
-4. Use the "Sample state" menu in the banner to switch between "Plenty left", "Running low", and "Nearly depleted". The cat's state and the 5-hour / weekly remaining percentages and reset times change accordingly.
+4. Use the "Sample state" menu in the banner to switch between "Plenty left", "Running low", and "Almost empty". The cat's state and the 5-hour / weekly remaining percentages and reset times change accordingly.
 5. Use the account picker to switch between "Sample account A" and "Sample account B". Settings lets you change the displayed limit and notification thresholds.
 6. Click "Exit sample data" in the banner (or in Settings > Accounts) to return to the normal, not-connected state. Sample data is never saved and does not persist across restarts.
 7. To use the real feature, choose "Add Account…" and sign in with an existing ChatGPT account through the official browser login.

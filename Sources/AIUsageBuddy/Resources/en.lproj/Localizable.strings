@@ -184,7 +184,7 @@
 "sample.scenario.label" = "Sample state";
 "sample.scenario.plenty" = "Plenty left";
 "sample.scenario.low" = "Running low";
-"sample.scenario.nearlyDepleted" = "Nearly depleted";
+"sample.scenario.nearlyDepleted" = "Almost empty";
 "sample.account.first" = "Sample account A";
 "sample.account.second" = "Sample account B";
 "sample.settings.note" = "Adding, renaming, and deleting accounts is unavailable while sample data is shown.";

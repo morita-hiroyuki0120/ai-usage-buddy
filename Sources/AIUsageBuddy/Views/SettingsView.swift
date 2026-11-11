@@ -36,19 +36,13 @@ struct SettingsView: View {
     var body: some View {
         Form {
             accountSection
-            Divider()
             selectedAccountSection
-            Divider()
             notificationSection
-            Divider()
             shortcutSection
             if !model.distributionChannel.isAppStore {
-                Divider()
-                updateSection
+                    updateSection
             }
-            Divider()
             generalSection
-            Divider()
             aboutSection
         }
         .formStyle(.grouped)

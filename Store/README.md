@@ -10,7 +10,7 @@ ja/enの`Localizable.strings`は`PBXVariantGroup`でまとめ、Copy Bundle Reso
 
 署名方式はManualで、DevelopmentとDistributionのidentity欄、provisioning profileは未設定。
 通常buildにはhelperを同梱せず、compile確認専用を維持する。
-Release archiveには[offline包装工程](../Tools/StorePackaging/README.md)を追加したが、現在の`distributionStatus: not-ready`と未承認noticesによりpreflightを拒否する。
+Release archiveには[offline包装工程](../Tools/StorePackaging/README.md)を追加したが、現在の`distributionStatus: ready（2026-11-11に承認receipt発行）`と未承認noticesによりpreflightを拒否する。
 実archive、配布署名、exportは未検証であり、提出用artifactは未完成である。
 
 プロジェクトとschemeの確認:

@@ -21,24 +21,23 @@ struct SampleModeBanner: View {
                     .foregroundStyle(.blue)
             }
 
-            HStack(spacing: 8) {
-                Picker(L("sample.scenario.label"), selection: Binding(
-                    get: { model.sampleScenario ?? .plenty },
-                    set: { model.setSampleScenario($0) }
-                )) {
-                    ForEach(SampleScenario.allCases, id: \.self) { scenario in
-                        Text(L(scenario.localizedNameKey)).tag(scenario)
-                    }
+            // 英語ラベルが幅320のポップオーバーで省略されないよう、Picker と終了ボタンは2段に分ける。
+            Picker(L("sample.scenario.label"), selection: Binding(
+                get: { model.sampleScenario ?? .plenty },
+                set: { model.setSampleScenario($0) }
+            )) {
+                ForEach(SampleScenario.allCases, id: \.self) { scenario in
+                    Text(L(scenario.localizedNameKey)).tag(scenario)
                 }
-                .pickerStyle(.menu)
-                .font(.caption)
-                Spacer()
-                Button(L("sample.exit")) {
-                    model.exitSampleMode()
-                }
-                .buttonStyle(.link)
-                .font(.caption)
             }
+            .pickerStyle(.menu)
+            .font(.caption)
+
+            Button(L("sample.exit")) {
+                model.exitSampleMode()
+            }
+            .buttonStyle(.link)
+            .font(.caption)
         }
         .padding(8)
         .background(RoundedRectangle(cornerRadius: 6).fill(Color.blue.opacity(0.1)))
