@@ -82,3 +82,18 @@ MPL-2.0の12候補とself_cell等の選択ライセンスについて、同梱�
 指定profileの許可された公開metadataをメモリ内CMS decodeで確認した以外に、認証情報、Keychain、利用者containerには触れていない。
 profileのインストール、code/config変更、ネットワーク、テスト、build、署名、portal、公開、Gitへの変更操作は行っていない。
 このチェックリストは実行承認や審査通過の保証を代替しない。
+
+## 2026-11-11のライセンス表記の状態
+
+ライセンス表記の判断シートQ1〜Q11は、2026-11-11にユーザー（人間）がすべて承認した。
+承認は方針の承認であり、最終本文の承認ではない。
+承認receiptは発行しておらず、`distributionStatus`は`not-ready`のままである。
+[新notices草稿](../build/third-party-notices-app-server-draft-20261111/validation.json)は907 component、493本文で、`draft-not-approved`である。
+旧standard草稿との差分は、display_containerの根拠commit差し替え、fxhashのsource header追加、self_cellのApache-2.0採用記録の3点だけである。
+[改訂source案内草稿3](../build/source-availability-draft-20261111-2/SOURCE-AVAILABILITY.draft.txt)は、窓口にGitHubのIssueを載せた。
+回答期間は未決定で、本文は未承認、未公開である。
+Q11はユーザーが確認済みとして進めると回答した。
+この回答を記録しただけで、法的適合は確認していない。
+Apple SDK留保は原文のまま残し、ユーザーが残余リスクを受け入れた。
+前節「次に必要な承認と実作業」の最初の項目は、方針の承認で一部進んだが、正式noticesとsource案内の本文承認とreceiptが未了のため、チェックを付けない。
+詳細は[判断シート](store-license-decision-sheet.md)と[残件レビュー](store-license-remaining-review.md)にある。

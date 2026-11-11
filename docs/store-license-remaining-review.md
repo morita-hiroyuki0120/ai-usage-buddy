@@ -95,6 +95,41 @@ holder/year placeholderは未置換で、実copyrightや上流取得本文では
 - source案内：[改訂草稿](../build/source-availability-draft-20261111/SOURCE-AVAILABILITY.draft.txt)を新規に作成した。既存草稿は変更していない。
 - 上流の保守者への問い合わせは行っていない。生成器の再実行もしていない（fixture 34件は成功）。
 
+## 2026-11-11の承認後の状態
+
+判断シートのQ1〜Q11は、2026-11-11にユーザー（人間）がすべて承認した。
+Q4とQ9とQ11は質問カードへの回答で、他は「推奨どおりでOK」との回答である。
+承認は方針の承認であり、最終本文の承認でも承認receiptの発行でもない。
+上の表と履歴は変更していない。
+
+承認に基づく新草稿を[`build/third-party-notices-app-server-draft-20261111/`](../build/third-party-notices-app-server-draft-20261111/validation.json)へ1回生成した。
+907 component、493本文、標準条項6件／10参照、NOTICE/copyright参照145件で、旧standard草稿からの差分は3 componentだけである。
+
+- display_container 0.9.0（Q2）：根拠commitを`e867865`から`13efb6d415c4729178dfccc36fa9c87491f0813d`へ差し替え、LICENSE-APACHEとLICENSE-MITを新commitのURLで追加した。0.8.1との版差の記述は外し、旧記録は履歴として残した。scope、copyright、NOTICEのレビューは未完のままである。
+- fxhash 0.2.1（Q3）：公開crateの`lib.rs`冒頭の著作権header（466 bytes）を、改変なしの`source-header-line-comment-not-license-terms`として加えた。Rust COPYRIGHTは未取得のままである。
+- self_cell 1.2.2（Q5）：`Apache-2.0 OR GPL-2.0-only`のうちApache-2.0を採用した旨を記録した。GPL-2.0-onlyは採用せず、両方の上流本文は残した。
+
+上流全文候補なしは6件から5件になった。
+display_containerにcommitを揃えた上流本文が付いたための結果で、残る5件の構成（標準条項の参考併記と宣言の明記）はQ1のとおり維持した。
+生成は`Tools/ThirdPartyNotices/generate_policy_draft.py`で行い、`scripts/`の生成器は変更していない。
+入力は[`build/license-policy-supplement-20261111/manifest.json`](../build/license-policy-supplement-20261111/manifest.json)である。
+fixtureテストは既存34件に新規5件を加えた39件が成功した。
+旧草稿20 fileと既存入力のhashは、生成前後で変わっていない。
+display_containerのcommitの公開日時とtitleは、判断シートの記録を使い、今回は再取得していない。
+
+Q9の窓口を反映したsource案内の改訂3を[`build/source-availability-draft-20261111-2/`](../build/source-availability-draft-20261111-2/SOURCE-AVAILABILITY.draft.txt)に作った。
+窓口はGitHubリポジトリのIssueで、個人の連絡先は載せていない。
+回答期間は未決定のため、本文に未決定と明記した。
+改訂2のファイルは変更していない。
+Q8の本文レビューと採用は、人間が別途行う。
+Q11はユーザーが確認済みとして進めると回答した。
+この回答を記録しただけで、調査担当はMPL-2.0とApple標準EULAの関係を確認していない。
+Q4のApple SDK留保は、原文のまま表示し、残余リスクをユーザーが受け入れた。
+留保は解消していない。
+
+草稿は`draft-not-approved`、`config/EmbeddedAppServer.json`の`distributionStatus`は`not-ready`のままで、承認receiptは発行していない。
+D9（Meta系6件の版対応）とD11（scope未確認9件）の追加調査は未実施である。
+
 [draft]: ../build/third-party-notices-draft-20261023-3/internal-manifest.json
 [graph]: ../build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/target-closure-followup/target-closure-inventory.json
 [s2]: ../build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/license-supplement-20261023-2/manifest.json

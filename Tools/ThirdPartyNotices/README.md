@@ -176,3 +176,23 @@ txtは2,157,754 bytes、SHA-256は`79c5a44f0d280147676805179ef89a06e2c2f52b5da76
 旧907/936を含む草稿20 fileと既存入力10 fileのhash不変を確認し、新規directoryの`validation.json`へ保存した。
 日本語技術文書スキルに従い、標準条項の追加と上流資料収集、法的適合と配布承認を分けて記録した。
 draft-not-approvedとnot-readyを維持し、配布承認receipt、config.ready変更、アプリ組込み、公開は行っていない。
+
+## 2026-11-11 承認済み方針の反映（Q2・Q3・Q5）
+
+`generate_policy_draft.py`は`scripts/generate-third-party-notices.py`を変更せずに読み込み、標準条項併記済みの草稿へ承認済みの方針を重ねる。
+入力は`--policy-supplement`で明示したmanifestだけで、hashを固定した資料を使い、ネットワークは使わない。
+
+- 根拠commitの差し替え：元crateの通常memberと固定commitのCargo.tomlを照合し、上流本文が従前の保存本文と同じbytesであることを確認する。旧記録は履歴として残す。
+- source header：公開crateのmember冒頭の連続する`//`行を、改変なしの別roleで加える。後続が空行でない場合は失敗とする。
+- OR選択：宣言と本文の存在が一致する場合だけ、承認済みの1件を記録する。
+
+出力は常に`draft-not-approved`かつ`not-ready`で、方針の承認は本文の承認ではない。
+fixtureは既存34件に`test_policy.py`の5件を加えた39件が成功した。
+新規`build/third-party-notices-app-server-draft-20261111/`へ1回生成し、907 component、493本文、旧草稿からの差分3 componentを`validation.json`に保存した。
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 Tools/ThirdPartyNotices/generate_policy_draft.py \
+  --output build/third-party-notices-app-server-draft-NEW \
+  --standard-license-supplement build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/standard-license-supplement-20261024/manifest.json \
+  --policy-supplement build/license-policy-supplement-20261111/manifest.json
+```

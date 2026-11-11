@@ -9,17 +9,35 @@
 
 ## 承認が必要な項目のチェックリスト
 
-- [ ] Q1：全文候補なし6件（D1〜D6）に、標準条項の併記（`standard-license-text`）と宣言の明記で対応する方針を承認するか。
-- [ ] Q2：display_containerの版差を、新たに確認した固定commit `13efb6d`への差し替えで整理する方針を承認するか。
-- [ ] Q3：fxhashのsource headerを実copyrightの出所として表示に加える方針を承認するか。
-- [ ] Q4：objc2系のApple SDK留保を、原文のまま表示して残余リスクを受容するか。
-- [ ] Q5：self_cellはApache-2.0を採用する（GPL-2.0-onlyは採用しない）方針を承認するか。
-- [ ] Q6：その他のOR選択は上流の全文を併記し、配布者による個別選択を記録しない方針を承認するか。
-- [ ] Q7：必要なNOTICE（Codex root、Meta buck2、moka、cfg_aliases、各COPYRIGHT）を現行のまま表示する方針を承認するか。
-- [ ] Q8：MPL-2.0の12候補について、改訂source案内草稿の採用に進むか。
-- [ ] Q9：上流の消失に備え、source案内に「依頼があれば提供する」旨の窓口を載せるか。
-- [ ] Q10：nucleoはGitHubのtree URLと固定commitで案内し、symlink入りarchiveを自社配布物に同梱しない方針を承認するか。
-- [ ] Q11：MPL-2.0とApple標準EULAの関係を、配布者が確認するか。
+- [x] Q1：全文候補なし6件（D1〜D6）に、標準条項の併記（`standard-license-text`）と宣言の明記で対応する方針を承認するか。 2026-11-11 ユーザー承認
+- [x] Q2：display_containerの版差を、新たに確認した固定commit `13efb6d`への差し替えで整理する方針を承認するか。 2026-11-11 ユーザー承認
+- [x] Q3：fxhashのsource headerを実copyrightの出所として表示に加える方針を承認するか。 2026-11-11 ユーザー承認
+- [x] Q4：objc2系のApple SDK留保を、原文のまま表示して残余リスクを受容するか。 2026-11-11 ユーザー承認（ユーザーの回答：原文のまま表示し、残余リスクを受け入れる）
+- [x] Q5：self_cellはApache-2.0を採用する（GPL-2.0-onlyは採用しない）方針を承認するか。 2026-11-11 ユーザー承認
+- [x] Q6：その他のOR選択は上流の全文を併記し、配布者による個別選択を記録しない方針を承認するか。 2026-11-11 ユーザー承認
+- [x] Q7：必要なNOTICE（Codex root、Meta buck2、moka、cfg_aliases、各COPYRIGHT）を現行のまま表示する方針を承認するか。 2026-11-11 ユーザー承認
+- [x] Q8：MPL-2.0の12候補について、改訂source案内草稿の採用に進むか。 2026-11-11 ユーザー承認（承認の範囲は採用手続へ進むこと。改訂source案内の本文レビューと採用は未実施）
+- [x] Q9：上流の消失に備え、source案内に「依頼があれば提供する」旨の窓口を載せるか。 2026-11-11 ユーザー承認（ユーザーの回答：窓口はGitHubリポジトリのIssue。個人の連絡先は載せない）
+- [x] Q10：nucleoはGitHubのtree URLと固定commitで案内し、symlink入りarchiveを自社配布物に同梱しない方針を承認するか。 2026-11-11 ユーザー承認
+- [x] Q11：MPL-2.0とApple標準EULAの関係を、配布者が確認するか。 2026-11-11 ユーザー承認（ユーザーの回答：配布者であるユーザーが確認済みとして進める。調査担当は確認しておらず、法的適合を判断していない）
+
+## 2026-11-11の承認結果と反映状況
+
+Q1〜Q11はすべて2026-11-11にユーザー（人間）が承認した。
+Q1〜Q3、Q5〜Q8、Q10は「推奨どおりでOK」との回答で、Q4、Q9、Q11は質問カードへの回答である。
+承認は方針の承認であり、最終本文の承認でも、承認receiptの発行でもない。
+`config/EmbeddedAppServer.json`の`distributionStatus`は`not-ready`のままで、草稿は`draft-not-approved`のままである。
+
+反映した成果物は次のとおりである。
+
+- Q2・Q3・Q5：[`build/third-party-notices-app-server-draft-20261111/`](../build/third-party-notices-app-server-draft-20261111/validation.json)に新草稿を生成した。入力は[`build/license-policy-supplement-20261111/manifest.json`](../build/license-policy-supplement-20261111/manifest.json)、生成は`Tools/ThirdPartyNotices/generate_policy_draft.py`である。
+- Q9：[`build/source-availability-draft-20261111-2/`](../build/source-availability-draft-20261111-2/SOURCE-AVAILABILITY.draft.txt)に、GitHub Issueの窓口を載せた改訂3を作った。回答期間は未決定のまま記載した。
+- Q1・Q6・Q7・Q10：現行の構成を維持した。草稿の本文に変更はない。
+- Q4：SDK留保を原文のまま維持した。本文に変更はない。
+- Q8：改訂source案内の本文レビューと採用は、人間が別途行う。採用済みにはしていない。
+- Q11：ユーザーの回答を記録しただけで、MPL-2.0とApple標準EULAの関係を調査担当は確認していない。
+
+「推奨」欄と判断表は、承認前の記録として残している。
 
 ## 残件ごとの判断表
 
@@ -62,7 +80,7 @@
 
 ## 判断を待つ間に進められる作業
 
-- D3の補完manifest（根拠commitを`13efb6d`へ変更）とD5のheader追加を反映した新規草稿の再生成。generatorは変更せず、新規の補完manifestと新規出力directoryで行える。今回は承認前のため再生成していない。
+- D3の補完manifest（根拠commitを`13efb6d`へ変更）とD5のheader追加を反映した新規草稿の再生成。generatorは変更せず、新規の補完manifestと新規出力directoryで行える。今回は承認前のため再生成していない。（承認後の2026-11-11に生成した。上の「承認結果と反映状況」を参照）
 - D9とD11の追加調査。
 
 ## 今回実施した確認
