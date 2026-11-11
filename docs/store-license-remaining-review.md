@@ -130,6 +130,18 @@ Q4のApple SDK留保は、原文のまま表示し、残余リスクをユーザ
 草稿は`draft-not-approved`、`config/EmbeddedAppServer.json`の`distributionStatus`は`not-ready`のままで、承認receiptは発行していない。
 D9（Meta系6件の版対応）とD11（scope未確認9件）の追加調査は未実施である。
 
+## 2026-11-11の追加調査（D9・D11）
+
+Meta系6件とscope未確認9件の公開情報調査を行った。
+結果は[判断シートの追加調査節](store-license-decision-sheet.md)にある。
+取得物は[`build/license-decision-check-20261111-2/`](../build/license-decision-check-20261111-2/)に保存した。
+15件はすべて「解消候補（根拠あり）」で、標準条項併記に回す件と未解決の件はなかった。
+Meta系6件は、公開直前のcommitで`.crate`内の全ファイルがbyte一致した。
+ただし`.crate`に`.cargo_vcs_info.json`はなく、公開時のcommit SHAそのものは確認できていない。
+新しい承認質問Q12〜Q16は、未承認である。
+草稿は再生成しておらず、policy manifestも変更していない。
+草稿は`draft-not-approved`、`distributionStatus`は`not-ready`のままで、承認receiptは発行していない。
+
 [draft]: ../build/third-party-notices-draft-20261023-3/internal-manifest.json
 [graph]: ../build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/target-closure-followup/target-closure-inventory.json
 [s2]: ../build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/license-supplement-20261023-2/manifest.json

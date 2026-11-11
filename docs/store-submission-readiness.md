@@ -97,3 +97,15 @@ Q11はユーザーが確認済みとして進めると回答した。
 Apple SDK留保は原文のまま残し、ユーザーが残余リスクを受け入れた。
 前節「次に必要な承認と実作業」の最初の項目は、方針の承認で一部進んだが、正式noticesとsource案内の本文承認とreceiptが未了のため、チェックを付けない。
 詳細は[判断シート](store-license-decision-sheet.md)と[残件レビュー](store-license-remaining-review.md)にある。
+
+## 2026-11-11の追加調査（D9・D11）
+
+Meta系6件とscope未確認9件の公開情報調査を行った。
+結果は[判断シートの追加調査節](store-license-decision-sheet.md)にある。
+取得物は[`build/license-decision-check-20261111-2/`](../build/license-decision-check-20261111-2/)に保存した。
+15件はすべて「解消候補（根拠あり）」で、標準条項併記に回す件と未解決の件はなかった。
+Meta系6件は、公開直前のcommitで`.crate`内の全ファイルがbyte一致した。
+ただし`.crate`に`.cargo_vcs_info.json`はなく、公開時のcommit SHAそのものは確認できていない。
+新しい承認質問Q12〜Q16は、未承認である。
+草稿は再生成しておらず、policy manifestも変更していない。
+草稿は`draft-not-approved`、`distributionStatus`は`not-ready`のままで、承認receiptは発行していない。
