@@ -20,16 +20,18 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   xcodebuild -list -project Store/AIUsageBuddy.xcodeproj
 ```
 
-署名を無効にしたarm64 compile check:
+署名を無効にしたcompile check:
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   xcodebuild -project Store/AIUsageBuddy.xcodeproj \
   -scheme AIUsageBuddyStore -configuration Debug \
-  -destination 'generic/platform=macOS' -arch arm64 \
+  -destination 'generic/platform=macOS' \
   -derivedDataPath build/app-store-project-check \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
+`-arch arm64`を`-destination 'generic/platform=macOS'`と併用するとxcodebuildがエラーになるため付けない。
+アーキテクチャを固定したい場合は`ARCHS=arm64 ONLY_ACTIVE_ARCH=NO`をbuild settingとして渡す（未検証）。
 この出力はcompile確認専用。
 既存のpackage-releaseやDMGスクリプトでStore版を梱包せず、Store helperの配布監査と実装が終わるまで提出しない。
