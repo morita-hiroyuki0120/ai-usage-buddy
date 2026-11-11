@@ -25,10 +25,10 @@
     ],
     "caveat": "analytics.enabled=false alone does not disable custom OTLP metrics"
   },
-  "noticeAudit": "pending",
-  "transitiveLicenseAudit": "pending",
+  "noticeAudit": "approved-by-project-owner-2026-11-11",
+  "transitiveLicenseAudit": "approved-by-project-owner-2026-11-11",
   "telemetryAudit": "incomplete",
   "mcpStartupAudit": "incomplete",
   "analyticsEventsClientAudit": "incomplete",
-  "distributionStatus": "not-ready"
+  "distributionStatus": "ready"
 }

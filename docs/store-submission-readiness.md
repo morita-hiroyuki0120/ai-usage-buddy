@@ -123,3 +123,16 @@ strong_hash_deriveだけは、公開時点commitのNOTICEが従前と異なる�
 承認receiptは発行しておらず、`distributionStatus`は`not-ready`のままである。
 各crateの配布時の適用、copyright、NOTICEのレビューは未完である。
 正式noticesとsource案内の本文承認が未了のため、前節のチェックは引き続き付けない。
+
+## 最終本文の承認とreceipt発行（2026-11-11）
+
+ユーザー（人間）がQ1〜Q16の方針と最終本文を承認し、source提供依頼への回答期間を30日以内と決めた。
+承認receipt `approval.json`を[approved inputs](../build/store-approved-inputs-20261111/)に発行した。receiptのSHA-256は`d496463a12754dddff688f872682423fe7775ce596c765c7f63ac1022397f500`。
+`config/EmbeddedAppServer.json`は`distributionStatus: ready`になった。
+最終版のhashは[判断シート](store-license-decision-sheet.md)に記録した。
+`prepare.py`のreceipt検証、`store-release.sh preflight`のdistribution status・receipt・署名identity・project設定は通った。
+preflightの残るNGは「Store profile未インストール」の1件のみである。
+包装fixture 18件、notices検証58件、全体206件は成功した。
+上の表と「noticesとsource案内の現在地」節の「not-ready」「receipt未発行」は、この追記より前の履歴であり、残している。
+残件は、profileのインストール、署名archive、export、検査、upload、App Store Connect側の残件（価格、審査アクセス等）で、いずれも別途承認が必要である。
+telemetry・MCP起動・analytics eventsのauditは`incomplete`のままである。

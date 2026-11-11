@@ -229,3 +229,23 @@ nucleo-matcherに第三者copyright記述は見つからなかったが、網羅
 - HEAD／GET確認：旧`facebook/buck2`と現`meta/buck2`のURLが、ともにHTTP 200（記録は`head-checks-20261111-2.tsv`）。
 - `.crate`の展開は、symlink、絶対パス、`..`を含むmemberを拒否する方式で行い、新規の空directoryへ展開した。取得物内のscript、`build.rs`は実行していない。`cargo build`も実行していない。
 - 既存の`build/`配下、`config/EmbeddedAppServer.json`、Sources／Store／scriptsは変更していない。
+
+## 最終本文の承認（2026-11-11）
+
+ユーザー（人間）が2026-11-11にチャットの質問カードで、最新草稿を最終版として承認した。
+承認範囲は、Q1〜Q16の方針と、THIRD-PARTY-NOTICESおよびSOURCE-AVAILABILITYの最終本文である。
+各crateの義務レビューは「方針どおり」として扱う。これは法的適合を断言するものではない。
+source提供依頼への回答期間は「30日以内」と決めた。
+最終版と承認receiptは新規directory `build/store-approved-inputs-20261111/` に置いた。
+草稿からの変更は、draft-not-approved等の状態表示の置換と、回答期間のプレースホルダ置換だけである（差分は同directoryの`DRAFT-TO-FINAL.diff`）。
+元の草稿は変更していない。
+
+| 対象 | SHA-256 |
+|---|---|
+| THIRD-PARTY-NOTICES.txt（元草稿 fd9561946bc9f58bf9431a6714fda951ed83ae8233c8afe5a4955b9eff3c82bc） | e2a9f491303eef16bf2445bec44403b31584e89cb4623b50d391616362a9fd85 |
+| SOURCE-AVAILABILITY.txt | f1dbf07f4a0bd3a3a189137503a7892149caa610df21dc20e9690033f5c3ce6f |
+| approval.json（receipt） | d496463a12754dddff688f872682423fe7775ce596c765c7f63ac1022397f500 |
+| config/EmbeddedAppServer.json（ready後） | 165371917e5eab3098db9e8d0b48b73f020b6eb0aaeaf8c8dcc0175e5321f2c2 |
+
+`config/EmbeddedAppServer.json`は`distributionStatus: ready`、`noticeAudit`と`transitiveLicenseAudit`を`approved-by-project-owner-2026-11-11`に更新した。
+telemetry系の3つのauditは`incomplete`のまま変更していない。
