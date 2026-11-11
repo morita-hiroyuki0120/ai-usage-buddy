@@ -176,6 +176,7 @@ cmd_archive() {
     --identity) need_arg "$@"; identity="$2"; shift 2;;
     --execute) execute=1; shift;;
     *) die "unknown option: $1";; esac; done
+  if [ -n "$inputs" ] && [ -d "$inputs" ]; then inputs="$(cd "$inputs" && pwd -P)"; fi  # prepare.py requires an absolute canonical path
   local pf=0
   cmd_preflight --inputs "$inputs" --approval-sha "$sha" --uuid "$uuid" || pf=1
   local out="$REPO_ROOT/build/store-archive-$(ts)"
@@ -227,7 +228,7 @@ cmd_export() {
   plutil -insert signingCertificate -string "Apple Distribution" "$plist"
   plutil -insert installerSigningCertificate -string "$inst" "$plist"
   plutil -insert provisioningProfiles -dictionary "$plist"
-  plutil -insert provisioningProfiles."$BID" -string "$uuid" "$plist"
+  plutil -insert "provisioningProfiles.${BID//./\\.}" -string "$uuid" "$plist"  # dots in the bundle ID must be escaped
   plutil -insert manageAppVersionAndBuildNumber -bool NO "$plist"
   plutil -insert uploadSymbols -bool NO "$plist"
   plutil -lint "$plist"
@@ -290,6 +291,7 @@ cmd_verify() {
     --approval-sha) need_arg "$@"; sha="$2"; shift 2;;
     *) die "unknown option: $1";; esac; done
   [ -n "$archive$exp" ] || die "give --archive and/or --export"
+  if [ -n "$inputs" ] && [ -d "$inputs" ]; then inputs="$(cd "$inputs" && pwd -P)"; fi  # prepare.py requires an absolute canonical path
   local out="$REPO_ROOT/build/store-verify-$(ts)"
   new_dir "$out"
   echo "verify output dir: $out"

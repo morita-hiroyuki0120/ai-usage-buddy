@@ -5,6 +5,7 @@ import importlib.util
 import io
 import json
 import os
+import plistlib
 from pathlib import Path
 import tarfile
 import tempfile
@@ -219,6 +220,20 @@ class PackagingTests(unittest.TestCase):
         for key, value in invalid:
             with self.subTest(key=key), self.assertRaises(p.Rejected):
                 p.verify_entitlements(dict(p.PARENT, **{key: value}), p.PARENT)
+
+    def test_signature_runtime_flag_parsing(self):
+        def sig(flags):
+            line = "CodeDirectory v=20500 size=371628 flags=%s hashes=11602+7 location=embedded" % flags
+            err = "Identifier=%s\n%s\n" % (p.HELPER_ID, line)
+            return type("R", (), {"stderr": err.encode(), "stdout": plistlib.dumps(p.CHILD)})()
+        def runner(flags):
+            return lambda cmd, *a, **k: sig(flags) if "--verbose=4" in cmd or "--entitlements" in cmd else sig(flags)
+        for flags in ("0x10002(adhoc,runtime)", "0x10000(runtime)"):
+            with patch.object(p, "run", runner(flags)):
+                p.verify_signature(Path("/x"), p.HELPER_ID, p.CHILD, final=False)
+        for flags in ("0x2(adhoc)", "0x0(none)", "0x10002(adhoc,notruntime)"):
+            with patch.object(p, "run", runner(flags)), self.assertRaises(p.Rejected):
+                p.verify_signature(Path("/x"), p.HELPER_ID, p.CHILD, final=False)
 
     def test_child_entitlements_remain_exact(self):
         p.verify_entitlements(dict(p.CHILD), p.CHILD)

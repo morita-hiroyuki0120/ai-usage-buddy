@@ -162,7 +162,10 @@ def verify_signature(path, identifier, entitlements, final=True):
     run(["/usr/bin/codesign", "--verify", "--strict", str(path)])
     info = run(["/usr/bin/codesign", "-d", "--verbose=4", str(path)]).stderr.decode("utf-8")
     lines = info.splitlines()
-    require("Identifier=" + identifier in lines and "(runtime)" in info, "signature-pattern-mismatch")
+    # Flags read e.g. "flags=0x10000(runtime)" or, for the ad-hoc staged helper, "flags=0x10002(adhoc,runtime)".
+    runtime = any(re.fullmatch(r"CodeDirectory .* flags=0x[0-9a-f]+\((?:[a-z]+,)*runtime(?:,[a-z]+)*\) .*", line)
+                  for line in lines)
+    require("Identifier=" + identifier in lines and runtime, "signature-pattern-mismatch")
     if final:
         require("TeamIdentifier=" + TEAM in lines and
                 any(line.startswith("Authority=Apple Distribution:") for line in lines),
