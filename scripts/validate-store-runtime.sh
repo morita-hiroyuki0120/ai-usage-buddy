@@ -171,7 +171,7 @@ PY
         -derivedDataPath "$derived_data" \
         CODE_SIGNING_ALLOWED=NO \
         ARCHS=arm64 \
-        MARKETING_VERSION=1.0.1 \
+        MARKETING_VERSION=1.0 \
         CURRENT_PROJECT_VERSION=2 \
         PRODUCT_BUNDLE_IDENTIFIER="$bundle_id" \
         INFOPLIST_KEY_CFBundleDisplayName="$display_name" \
@@ -190,7 +190,7 @@ PY
         || fail 'validation bundle identifier was not generated'
     [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$info_plist")" == "$display_name" ]] \
         || fail 'local test display name was not generated'
-    [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$info_plist")" == '1.0.1' ]] \
+    [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$info_plist")" == '1.0' ]] \
         || fail 'candidate marketing version was not generated'
     [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$info_plist")" == '2' ]] \
         || fail 'candidate build version was not generated'

@@ -144,7 +144,7 @@ private enum StoreRuntimeValidationRunner {
             let runtimeClient = CodexAppServerClient(
                 codexHome: codexHome,
                 clientName: "AI Usage Buddy Store Runtime Validation",
-                clientVersion: "1.0.1",
+                clientVersion: "1.0",
                 distributionChannel: .appStore,
                 bundleURL: Bundle.main.bundleURL,
                 accountID: managedAccountID,
