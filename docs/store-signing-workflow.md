@@ -76,3 +76,28 @@ exportしたappには、承認済み入力を渡した場合に限り`prepare-st
 - helperのCodeSignOnCopy再署名後の入れ子署名がpkgでも保たれるか。
 - `altool --upload-app`のオプション（`--type`の要否を含む）。実行前に`xcrun altool --help`で確認する。
 - build 2がApp Store Connect上で未使用かどうか。
+
+## 2026-11-13 build 3の成果物と検証結果
+
+入力は`build/store-approved-inputs-20261113/`（approval.json SHA-256 `742d9fe9acfef0c4d2abaea272fef0050501d66c7cdf0afddddaea208a778c4e`）、helperは0.167.2である。
+`preflight`は`--expect-version 1.0 --expect-build 3`付きでall checks passedだった。
+
+| 成果物 | path |
+|---|---|
+| archive | `build/store-archive-20261113-102409/AIUsageBuddy.xcarchive` |
+| export | `build/store-export-20261113-102504/export/AI Usage Buddy.pkg`（83,223,321 bytes、SHA-256 `66e5034262aeaeebd60761097efd8e6182b1e1c4b520d9aabe02613b2f9753a7`） |
+| archiveのverify | `build/store-verify-20261113-102542/` |
+| exportのverify | `build/store-verify-20261113-102543/`（pkgの展開先を含む） |
+
+archiveとexportの`verify`はどちらもall checks passedだった。
+確認できた内容は次のとおりである。
+
+- Info.plistはCFBundleShortVersionString=1.0、CFBundleVersion=3、LSApplicationCategoryType=public.app-category.productivityである。
+- 親appのentitlementsは、application-identifier、team-identifier、app-sandbox、network.clientだけである。network.serverは無い。
+- helperは0.167.2で、entitlementsはsandboxとinheritだけである。prepare.pyの検証で、tar.gz由来の元バイナリとの一致も確認した（CodeDirectory以外）。
+- archiveとexportの両方で、helperの`otool -L`にliblzmaは無く、`nm -u`に`_lzma_`も無い。
+- export後のappの2つのMach-O（親とhelper）が参照する`/usr/lib`のdylibは、すべてSDKの.tbdに存在する。helperはlibSystem、libobjc、libbz2、libiconvだけで、親はlibSystem、libobjc、libswift系である。
+- pkgはinstaller証明書（Team 9HYDLV4RY2）で署名されている。
+
+実profileが付与するentitlementsは、prepare.pyの許可リストに収まった。
+upload、審査提出、App Store Connectの操作は行っていない。

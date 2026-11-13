@@ -381,3 +381,23 @@ Q17とQ18は、既存の扱いの適用であり、草稿の本文は変わら�
 - forkの元のlzma-rust crateは調べていない。そのcopyright holderとライセンスは記録していない。
 - BCJ filter、CRC、lzip等に別の出所があるかは調べていない。
 - 法的結論ではない。各crateの配布時の適用、copyright、NOTICEのレビューは未完である。
+
+## 最終本文の承認（2026-11-13、0.167.2）
+
+ユーザー（人間）が2026-11-13にチャットで、helper 0.167.2版のライセンス表記とsource案内の最終本文の承認を求められ、「承認する」と回答した。
+承認範囲は、Q1〜Q19の方針と、THIRD-PARTY-NOTICESおよびSOURCE-AVAILABILITYの最終本文である。
+各crateの義務レビューは「方針どおり」として扱う。これは法的適合を断言するものではない。
+source提供依頼への回答期間は「30日以内」のままである。
+最終版と承認receiptは新規directory `build/store-approved-inputs-20261113/` に置いた。
+草稿からの変更は、draft-not-approved等の状態表示の置換と、回答期間のプレースホルダ置換だけである（差分は同directoryの`DRAFT-TO-FINAL.diff`）。
+元の草稿と、2026-11-11の最終版は変更していない。
+
+| 対象 | SHA-256 |
+|---|---|
+| THIRD-PARTY-NOTICES.txt（元草稿 309dc8a72a47deed599efb22c353bbb55099af4a4a2c2fa3d6bb66d88a6559ee） | 66819664b32d2effad869e3ecea40f00b0020026e4a1581a25b71ae9221e7b59 |
+| SOURCE-AVAILABILITY.txt（元草稿 7c1f37bb1e528267876b9cc42c625cfeb5d8c89e39927ed5a9481fdd5e1e5a76） | 815c7c4c28875d30cb9dae9fa02737d0c3f077ce2719ef8296fbbaef4bb1d64c |
+| approval.json（receipt） | 742d9fe9acfef0c4d2abaea272fef0050501d66c7cdf0afddddaea208a778c4e |
+| config/EmbeddedAppServer.json（ready後） | 0c449249e2be439158123ac0389dbff6a6981c84693798e9a08bf9569523494a |
+
+`config/EmbeddedAppServer.json`は`distributionStatus: ready`、`noticeAudit`と`transitiveLicenseAudit`を`approved-by-project-owner-2026-11-13`に更新した。
+telemetry系の3つのauditは`incomplete`のまま変更していない。

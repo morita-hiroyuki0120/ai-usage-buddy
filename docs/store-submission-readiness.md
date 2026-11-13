@@ -149,3 +149,12 @@ telemetry・MCP起動・analytics eventsのauditは`incomplete`のままであ�
 - 新たな人間の判断はQ17〜Q19の3件である（[判断シート](store-license-decision-sheet.md)の末尾）。
 - 最終本文の再承認が必要である。`config/EmbeddedAppServer.json`は編集していない。0.163.0の承認receiptは、0.167.2のartifactには当てはまらない。
 - fixtureは69件が成功した。含有の証明、法的適合の断言ではない。
+
+## 2026-11-13 build 3の署名付きarchiveとexport
+
+最終本文の承認（[判断表](store-license-decision-sheet.md)）を受け、`distributionStatus`を`ready`にし、approval.json（SHA-256 `742d9fe9…8c4e`）を発行した。
+project候補のversion/buildは1.0/3に上げた。
+fixtureテスト、`run-tests.sh --no-parallel`（213 tests）、`preflight`は通った。
+署名付きarchive、export、archiveとexportのverifyも通った（成果物のpathと確認結果は[署名手順](store-signing-workflow.md)）。
+uploadと審査提出は行っていない。
+build 3がApp Store Connect上で未使用かどうかは確認していない。
