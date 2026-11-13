@@ -45,6 +45,12 @@
 "settings.login.completing" = "ログインを確認中…";
 "settings.login.success" = "追加しました:";
 "settings.login.failed" = "ログインに失敗しました";
+"login.deviceCode.instruction" = "ブラウザで開いたページに、次のコードを入力してください。";
+"login.deviceCode.codeLabel" = "ワンタイムコード";
+"login.deviceCode.copy" = "コードをコピー";
+"login.deviceCode.copied" = "コピーしました";
+"login.deviceCode.openBrowser" = "ブラウザを開く";
+"login.deviceCode.waiting" = "コードを入力してログインを承認すると、自動的に完了します。コードの有効期限は約15分です。";
 "settings.selectedAccount" = "選択中のアカウント";
 "settings.displayLimit" = "メニューバー表示リミット";
 "settings.manual.hint" = "自動取得が失敗している間だけ、残量%を手動で入力できます。";

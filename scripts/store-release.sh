@@ -260,7 +260,7 @@ verify_app() { # $1=app path $2=label
   echo "       parent entitlement keys: $(ent_keys "$app")"
   [ "$(ent_get "$app" com.apple.security.app-sandbox)" = "true" ] && vok "app-sandbox" || vng "app-sandbox not true"
   [ "$(ent_get "$app" com.apple.security.network.client)" = "true" ] && vok "network.client" || vng "network.client not true"
-  [ "$(ent_get "$app" com.apple.security.network.server)" = "true" ] && vok "network.server" || vng "network.server not true"
+  [ "$(ent_get "$app" com.apple.security.network.server)" = "<absent>" ] && vok "network.server absent (device-code login)" || vng "network.server must not be present"
   [ "$(ent_get "$app" com.apple.security.get-task-allow)" != "true" ] && vok "get-task-allow not true" || vng "get-task-allow=true"
   local appid; appid="$(ent_get "$app" com.apple.application-identifier)"
   [ "$appid" = "$TEAM.$BID" ] && vok "com.apple.application-identifier=$appid" || vng "com.apple.application-identifier=$appid"

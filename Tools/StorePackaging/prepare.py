@@ -18,8 +18,9 @@ ARCHIVE_SHA = "8165de84cc8e436d46d5e52fe6b68de053ba729c543e6310a1bd41e881cf4c37"
 MEMBER = "codex-app-server-aarch64-apple-darwin"
 HELPER_ID = BID + ".codex-app-server"
 CHILD = {"com.apple.security.app-sandbox": True, "com.apple.security.inherit": True}
-PARENT = {"com.apple.security.app-sandbox": True,
-          "com.apple.security.network.client": True, "com.apple.security.network.server": True}
+# Device-code login needs no local listener, so network.server is intentionally absent
+# (verify_entitlements compares exactly, so a signed app that still carries it is rejected).
+PARENT = {"com.apple.security.app-sandbox": True, "com.apple.security.network.client": True}
 ROOT_HASHES = {"LICENSE": "d17f227e4df5da1600391338865ce0f3055211760a36688f816941d58232d8dc",
                "NOTICE": "9d71575ecfd9a843fc1677b0efb08053c6ba9fd686a0de1a6f5382fd3c220915"}
 PAYLOADS = {"App-LICENSE", "LICENSE", "NOTICE", "THIRD-PARTY-NOTICES.txt", "SOURCE-AVAILABILITY.txt"}

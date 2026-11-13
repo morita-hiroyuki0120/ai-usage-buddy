@@ -45,6 +45,12 @@
 "settings.login.completing" = "Verifying login…";
 "settings.login.success" = "Added:";
 "settings.login.failed" = "Login failed";
+"login.deviceCode.instruction" = "Enter this code on the page that opened in your browser.";
+"login.deviceCode.codeLabel" = "One-time code";
+"login.deviceCode.copy" = "Copy code";
+"login.deviceCode.copied" = "Copied";
+"login.deviceCode.openBrowser" = "Open browser";
+"login.deviceCode.waiting" = "After you enter the code and approve the sign-in, this completes automatically. The code expires in about 15 minutes.";
 "settings.selectedAccount" = "Selected account";
 "settings.displayLimit" = "Menu bar limit";
 "settings.manual.hint" = "While auto refresh is failing, you can enter remaining % manually.";

@@ -216,10 +216,23 @@ class PackagingTests(unittest.TestCase):
                    ("keychain-access-groups", [p.TEAM + "." + p.BID, p.TEAM + ".other"]),
                    ("com.apple.security.get-task-allow", True),
                    ("get-task-allow", True), ("com.apple.security.files.user-selected.read-write", True),
-                   ("com.apple.security.network.client", 1), ("com.apple.security.inherit", True))
+                   ("com.apple.security.network.client", 1), ("com.apple.security.inherit", True),
+                   ("com.apple.security.network.server", True))
         for key, value in invalid:
             with self.subTest(key=key), self.assertRaises(p.Rejected):
                 p.verify_entitlements(dict(p.PARENT, **{key: value}), p.PARENT)
+
+    def test_parent_entitlements_exclude_network_server(self):
+        self.assertEqual(p.PARENT, {"com.apple.security.app-sandbox": True,
+                                    "com.apple.security.network.client": True})
+        self.assertNotIn("com.apple.security.network.server", p.PARENT)
+        # Store entitlements file must match the required profile exactly.
+        with open(Path(__file__).resolve().parents[3] / "Store" / "AIUsageBuddyStore.entitlements", "rb") as f:
+            self.assertEqual(plistlib.load(f), p.PARENT)
+        # An app signed with the old three-entitlement profile is rejected.
+        old = dict(p.PARENT, **{"com.apple.security.network.server": True})
+        with self.assertRaises(p.Rejected):
+            p.verify_entitlements(old, p.PARENT)
 
     def test_signature_runtime_flag_parsing(self):
         def sig(flags):

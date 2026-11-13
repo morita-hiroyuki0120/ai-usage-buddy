@@ -29,7 +29,7 @@
 <p>No fixed retention period is defined. Stored information remains on your Mac until you delete it as described below or delete the App.</p>
 
 <h2>Communication with OpenAI</h2>
-<p>When you start connecting an account, the bundled helper performs the official OpenAI sign-in, fetches account information, and fetches your allowance. During sign-in, an authentication URL opens in your default browser, which communicates with OpenAI's site.</p>
+<p>When you start connecting an account, the bundled helper performs the official OpenAI sign-in, fetches account information, and fetches your allowance. During sign-in, the App shows a one-time code and OpenAI's verification page opens in your default browser (device-code sign-in). You enter the code and approve on that page, which communicates with OpenAI's site. The App does not listen on any local port for authentication.</p>
 <p>The bundled helper may also communicate with OpenAI's servers for other purposes. The Operator has not been able to determine the full content of this communication, or OpenAI's retention periods and purposes. For how OpenAI handles information, please see the <a href="https://openai.com/policies/privacy-policy/">OpenAI Privacy Policy</a>.</p>
 <p>The App starts the bundled helper with settings that disable analytics and telemetry, but this does not guarantee that no other communication takes place.</p>
 

@@ -361,11 +361,13 @@ public actor CodexAppServerClient {
         }
     }
 
-    /// `account/login/start` — 公式 OAuth ログインを開始し authUrl を得る。
-    public func startLogin() async throws -> LoginStartResult {
+    /// `account/login/start` — 公式ログインを開始する。
+    /// - `.browser`: `type:"chatgpt"`（helper が 127.0.0.1 でリダイレクトを待ち受け、authUrl を返す）。
+    /// - `.deviceCode`: `type:"chatgptDeviceCode"`（ローカル待受なし。verificationUrl と userCode を返す）。
+    public func startLogin(method: LoginMethod = .browser) async throws -> LoginStartResult {
         let result = try await request(
             method: "account/login/start",
-            params: ["type": .string("chatgpt")]
+            params: ["type": .string(method.rpcType)]
         )
         let data = try JSONEncoder().encode(result)
         return try JSONDecoder().decode(LoginStartResult.self, from: data)
@@ -536,4 +538,41 @@ public struct LoginStartResult: Decodable, Sendable {
     public let type: String?
     public let authUrl: String?
     public let loginId: String?
+    /// `chatgptDeviceCode` のみ: コード入力ページ（`{issuer}/codex/device`）。
+    public let verificationUrl: String?
+    /// `chatgptDeviceCode` のみ: ワンタイムコード。ログには出さない。
+    public let userCode: String?
+
+    public init(
+        type: String? = nil,
+        authUrl: String? = nil,
+        loginId: String? = nil,
+        verificationUrl: String? = nil,
+        userCode: String? = nil
+    ) {
+        self.type = type
+        self.authUrl = authUrl
+        self.loginId = loginId
+        self.verificationUrl = verificationUrl
+        self.userCode = userCode
+    }
+}
+
+/// `account/login/start` のログイン方式。
+public enum LoginMethod: Equatable, Sendable {
+    /// ブラウザ OAuth（helper がローカルでリダイレクトを受ける）。Direct 版。
+    case browser
+    /// デバイスコード（ローカル待受なし）。Store 版（network.server を持たない）。
+    case deviceCode
+
+    var rpcType: String {
+        switch self {
+        case .browser: return "chatgpt"
+        case .deviceCode: return "chatgptDeviceCode"
+        }
+    }
+
+    static func method(for channel: DistributionChannel) -> LoginMethod {
+        channel.isAppStore ? .deviceCode : .browser
+    }
 }

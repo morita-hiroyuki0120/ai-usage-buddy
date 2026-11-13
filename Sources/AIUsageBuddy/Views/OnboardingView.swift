@@ -123,6 +123,10 @@ struct OnboardingView: View {
                 }
                 .padding(10)
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.05)))
+            case .awaitingDeviceCode(let userCode, let verificationURL):
+                DeviceCodeLoginView(model: model, userCode: userCode, verificationURL: verificationURL)
+                    .padding(10)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.05)))
             case .completing:
                 Text(L("settings.login.completing")).font(.callout)
             case .success(let name):

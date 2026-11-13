@@ -105,7 +105,7 @@ WHAT IT DOES
 - Available in Japanese and English (or follow your system language)
 
 GOOD TO KNOW
-- AI Usage Buddy does not ask you to create a separate account. To see your quota, you sign in to your existing ChatGPT account from OpenAI through the official browser login. You never type your password into this app.
+- AI Usage Buddy does not ask you to create a separate account. To see your quota, you sign in to your existing ChatGPT account from OpenAI through the official sign-in, which shows a one-time code that you enter on OpenAI's page in your browser. You never type your password into this app.
 - Quota can be shown for accounts that have Codex usage limits. Whether limits are available, and what they are, depends on your plan.
 - The remaining quota and reset times come from OpenAI's service through that official sign-in. They may be unavailable or delayed if the service changes or the connection is poor.
 - Without connecting an account, you can choose "Try with sample data" to explore the screens with example numbers. While sample data is shown, the app displays a "Showing sample data" notice and does not sign in, make network requests, send notifications, or save data. The numbers are not your actual usage.

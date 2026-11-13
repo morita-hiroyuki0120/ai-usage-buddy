@@ -16,6 +16,9 @@ public enum LogRedactor {
         result = replace(pattern: #"(?i)(bearer\s+)[A-Za-z0-9._\-]+"#, in: result, keepPrefix: "$1")
         result = replace(pattern: #"(?i)((?:access[_\-]?token|refresh[_\-]?token|id[_\-]?token|api[_\-]?key|session[_\-]?key)["'\s:=]+)[A-Za-z0-9._\-]+"#, in: result, keepPrefix: "$1")
 
+        // デバイスコード（userCode）
+        result = replace(pattern: #"(?i)(user[_\-\s]?code["'\s:=]+)[A-Za-z0-9\-]+"#, in: result, keepPrefix: "$1")
+
         // JWT 形式（3分割のドット区切り）
         result = replace(pattern: #"[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{20,}"#, in: result)
 

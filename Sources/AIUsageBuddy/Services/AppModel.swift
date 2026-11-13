@@ -5,7 +5,7 @@ import SwiftUI
 
 protocol PendingLoginClient: Actor {
     func start() async throws
-    func startLogin() async throws -> LoginStartResult
+    func startLogin(method: LoginMethod) async throws -> LoginStartResult
     func notifications() -> AsyncStream<ServerNotification>
     func readAccount() async throws -> GetAccountResponse
     func stop() async
@@ -21,6 +21,8 @@ public enum LoginFlowState: Equatable, Sendable {
     case idle
     /// authUrl を表示中（ユーザーがブラウザで認証を行う段階）。
     case awaitingBrowserAuth(authURL: String)
+    /// デバイスコード方式: ワンタイムコードを表示中（ユーザーが verificationURL のページでコードを入力する段階）。
+    case awaitingDeviceCode(userCode: String, verificationURL: String)
     /// 認証完了を app-server からの通知で待機中。
     case completing
     case success(accountName: String)
@@ -716,22 +718,41 @@ public final class AppModel: ObservableObject {
                 return
             }
 
-            let login = try await newClient.startLogin()
+            let loginMethod = LoginMethod.method(for: distributionChannel)
+            let login = try await newClient.startLogin(method: loginMethod)
             try Task.checkCancellation()
             guard pendingLoginAccountID == accountID else {
                 await newClient.stop()
                 return
             }
-            guard let authURL = login.authUrl else {
-                await newClient.stop()
-                guard pendingLoginAccountID == accountID else { return }
-                releasePendingLoginClient(for: accountID)
-                try? accountStore.delete(accountID: accountID)
-                loginFlow = .failed(errorMessage: "app-server did not return an authUrl")
-                return
+            let urlToOpen: String
+            switch loginMethod {
+            case .browser:
+                guard let authURL = login.authUrl else {
+                    await newClient.stop()
+                    guard pendingLoginAccountID == accountID else { return }
+                    releasePendingLoginClient(for: accountID)
+                    try? accountStore.delete(accountID: accountID)
+                    loginFlow = .failed(errorMessage: "app-server did not return an authUrl")
+                    return
+                }
+                loginFlow = .awaitingBrowserAuth(authURL: authURL)
+                urlToOpen = authURL
+            case .deviceCode:
+                guard let userCode = login.userCode, !userCode.isEmpty,
+                      let verificationURL = login.verificationUrl,
+                      let parsed = URL(string: verificationURL), parsed.scheme == "https" else {
+                    await newClient.stop()
+                    guard pendingLoginAccountID == accountID else { return }
+                    releasePendingLoginClient(for: accountID)
+                    try? accountStore.delete(accountID: accountID)
+                    loginFlow = .failed(errorMessage: "app-server did not return a device code")
+                    return
+                }
+                loginFlow = .awaitingDeviceCode(userCode: userCode, verificationURL: verificationURL)
+                urlToOpen = verificationURL
             }
-            loginFlow = .awaitingBrowserAuth(authURL: authURL)
-            if let url = URL(string: authURL) {
+            if let url = URL(string: urlToOpen) {
 #if DEBUG
                 if let loginURLHandler {
                     loginURLHandler(url)

@@ -100,7 +100,7 @@ struct SettingsView: View {
 
     private var loginInProgress: Bool {
         switch model.loginFlow {
-        case .awaitingBrowserAuth, .completing: return true
+        case .awaitingBrowserAuth, .awaitingDeviceCode, .completing: return true
         default: return false
         }
     }
@@ -170,6 +170,8 @@ struct SettingsView: View {
                     }
                 }
             }
+        case .awaitingDeviceCode(let userCode, let verificationURL):
+            DeviceCodeLoginView(model: model, userCode: userCode, verificationURL: verificationURL)
         case .completing:
             Text(L("settings.login.completing")).font(.callout)
         case .success(let name):

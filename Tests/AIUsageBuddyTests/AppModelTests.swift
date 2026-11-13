@@ -16,8 +16,19 @@ private actor DelayedPendingLoginClient: PendingLoginClient {
 
     func start() async throws {}
 
-    func startLogin() async throws -> LoginStartResult {
-        LoginStartResult(type: "chatgpt", authUrl: "https://example.invalid/", loginId: "fixture")
+    private(set) var startedMethods: [LoginMethod] = []
+
+    func startLogin(method: LoginMethod) async throws -> LoginStartResult {
+        startedMethods.append(method)
+        switch method {
+        case .browser:
+            return LoginStartResult(type: "chatgpt", authUrl: "https://example.invalid/", loginId: "fixture")
+        case .deviceCode:
+            return LoginStartResult(
+                type: "chatgptDeviceCode", loginId: "fixture",
+                verificationUrl: "https://example.invalid/codex/device", userCode: "ABCD-EFGH"
+            )
+        }
     }
 
     func notifications() -> AsyncStream<ServerNotification> {
@@ -610,7 +621,7 @@ struct AppModelTests {
         #expect(factoryCalls == 2, "古い完了が新しいpending clientを解放しない")
         #expect(env.model.accounts == [existing], "古い応答はアカウントを追加しない")
         #expect(env.model.settingsStore.settings.selectedAccountID == existing.id)
-        #expect(env.model.loginFlow == .awaitingBrowserAuth(authURL: "https://example.invalid/"))
+        #expect(env.model.loginFlow == .awaitingDeviceCode(userCode: "ABCD-EFGH", verificationURL: "https://example.invalid/codex/device"))
         #expect(try env.model.accountStore.loadAccounts() == [existing])
 
         await env.model.cancelLogin()
@@ -653,8 +664,58 @@ struct AppModelTests {
         #expect(factoryCalls == 2, "遅れて完了したcancelが新しいclientを解放しない")
         #expect(env.model.accounts == [existing])
         #expect(env.model.settingsStore.settings.selectedAccountID == existing.id)
-        #expect(env.model.loginFlow == .awaitingBrowserAuth(authURL: "https://example.invalid/"))
+        #expect(env.model.loginFlow == .awaitingDeviceCode(userCode: "ABCD-EFGH", verificationURL: "https://example.invalid/codex/device"))
 
+        await env.model.cancelLogin()
+    }
+
+    @Test("Store版はchatgptDeviceCodeで開始しコード表示状態へ遷移・キャンセルでidleへ戻る")
+    func storeUsesDeviceCodeAndCancelReturnsToIdle() async throws {
+        let env = TestEnvironment.make(distributionChannel: .appStore)
+        defer { try? FileManager.default.removeItem(at: env.container) }
+        let client = DelayedPendingLoginClient()
+        var opened: [URL] = []
+        env.model.configureLoginTesting(clientFactory: { _, _ in client }, openURL: { opened.append($0) })
+
+        let accountsBefore = try env.model.accountStore.loadAccounts()
+        await env.model.beginAddAccount()
+        await client.waitForNotificationSubscription()
+
+        #expect(await client.startedMethods == [.deviceCode])
+        #expect(env.model.loginFlow == .awaitingDeviceCode(
+            userCode: "ABCD-EFGH", verificationURL: "https://example.invalid/codex/device"))
+        #expect(opened == [URL(string: "https://example.invalid/codex/device")!], "verificationUrlを既定ブラウザで開く")
+
+        await env.model.cancelLogin()
+        #expect(env.model.loginFlow == .idle)
+        #expect(try env.model.accountStore.loadAccounts() == accountsBefore)
+    }
+
+    @Test("Store版でdevice code完了通知が来るとcompletingへ進む")
+    func storeDeviceCodeCompletionProceeds() async throws {
+        let env = TestEnvironment.make(distributionChannel: .appStore)
+        defer { try? FileManager.default.removeItem(at: env.container) }
+        let client = DelayedPendingLoginClient()
+        env.model.configureLoginTesting(clientFactory: { _, _ in client }, openURL: { _ in })
+        await env.model.beginAddAccount()
+        await client.waitForNotificationSubscription()
+        await client.sendSuccessfulCompletion()
+        await client.waitForAccountRead()
+        #expect(env.model.loginFlow == .completing)
+        await client.releaseAccountRead()
+        await env.model.cancelLogin()
+    }
+
+    @Test("Direct版は従来どおりchatgptブラウザログインのまま")
+    func directKeepsBrowserLogin() async throws {
+        let env = TestEnvironment.make(distributionChannel: .direct)
+        defer { try? FileManager.default.removeItem(at: env.container) }
+        let client = DelayedPendingLoginClient()
+        env.model.configureLoginTesting(clientFactory: { _, _ in client }, openURL: { _ in })
+        await env.model.beginAddAccount()
+        await client.waitForNotificationSubscription()
+        #expect(await client.startedMethods == [.browser])
+        #expect(env.model.loginFlow == .awaitingBrowserAuth(authURL: "https://example.invalid/"))
         await env.model.cancelLogin()
     }
 }

@@ -56,7 +56,6 @@ profiles = {
     "app": {
         "com.apple.security.app-sandbox": True,
         "com.apple.security.network.client": True,
-        "com.apple.security.network.server": True,
     },
     "helper": {
         "com.apple.security.app-sandbox": True,
@@ -233,7 +232,6 @@ with open(sys.argv[1], "rb") as source:
 expected = {
     "com.apple.security.app-sandbox": True,
     "com.apple.security.network.client": True,
-    "com.apple.security.network.server": True,
 }
 if entitlements != expected:
     raise SystemExit("app entitlements do not match the Store sandbox profile")
