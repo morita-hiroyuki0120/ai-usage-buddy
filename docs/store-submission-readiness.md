@@ -136,3 +136,16 @@ preflightの残るNGは「Store profile未インストール」の1件のみで�
 上の表と「noticesとsource案内の現在地」節の「not-ready」「receipt未発行」は、この追記より前の履歴であり、残している。
 残件は、profileのインストール、署名archive、export、検査、upload、App Store Connect側の残件（価格、審査アクセス等）で、いずれも別途承認が必要である。
 telemetry・MCP起動・analytics eventsのauditは`incomplete`のままである。
+
+## 2026-11-13 helper 0.167.2 更新に伴うnoticesの再生成
+
+2026-11-11の承認済み最終本文（`build/store-approved-inputs-20261111/`）は0.163.0用であり、0.167.2のhelperには使えない。
+0.167.2用の草稿を新規directoryに作った。いずれも`draft-not-approved`で、承認receiptは発行していない。
+
+- notices草稿：[`build/third-party-notices-app-server-draft-20261113/`](../build/third-party-notices-app-server-draft-20261113/validation.json)。934 component、504本文、SHA-256は`309dc8a72a47deed599efb22c353bbb55099af4a4a2c2fa3d6bb66d88a6559ee`である。
+- source案内の改訂草稿：[`build/source-availability-draft-20261113/`](../build/source-availability-draft-20261113/validation.json)。MPL-2.0の12候補は変わらず、Codexを0.167.2に更新した。
+- 依存集合は、app-serverが907から934、releaseの2 binaryの合計が936から964になった。`xz2`と`lzma-sys`が消え、`lzma-rust2`が入った。
+- 承認済みのQ1〜Q16は、版が同じcrateにそのまま引き継いだ。mxc系3件はmxc-sdkに、rmcp系2件は新しいrevisionに、同じ根拠の取り方で再確認した。
+- 新たな人間の判断はQ17〜Q19の3件である（[判断シート](store-license-decision-sheet.md)の末尾）。
+- 最終本文の再承認が必要である。`config/EmbeddedAppServer.json`は編集していない。0.163.0の承認receiptは、0.167.2のartifactには当てはまらない。
+- fixtureは69件が成功した。含有の証明、法的適合の断言ではない。

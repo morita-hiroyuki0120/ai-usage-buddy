@@ -16,9 +16,11 @@ import sys
 import tarfile
 import tomllib
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts/generate-third-party-notices.py"
 _spec = importlib.util.spec_from_file_location("notices_generator", SCRIPT)
 g = importlib.util.module_from_spec(_spec)
+sys.modules["notices_generator"] = g  # shared with helper_update so AuditError is one class
 _spec.loader.exec_module(g)
 
 HEADER_ROLE = "source-header-line-comment-not-license-terms"
@@ -404,8 +406,14 @@ def finish(files, report, manifest):
             "unresolved-report.json": encode(unresolved)}
 
 
-def build(root, scope, standard, policy):
-    components, refs = g.load_components(root)
+def build(root, scope, standard, policy, inputs="helper-0.163.0"):
+    g.need(inputs in ("helper-0.163.0", "helper-0.167.2"), "unknown input set")
+    if inputs == "helper-0.167.2":
+        # New 0.167.2 inputs; identical lock entries reuse the verified 0.163.0 components.
+        import helper_update
+        components, refs = helper_update.load_components(root)
+    else:
+        components, refs = g.load_components(root)
     components, selection = g.select_input_scope(root, components, refs, scope)
     components, refs = g.attach_standard_terms(root, components, refs, standard)
     components, refs = apply_policy(root, components, refs, policy)
@@ -419,10 +427,12 @@ def main():
     parser.add_argument("--output", required=True, help="New project-relative build directory")
     parser.add_argument("--standard-license-supplement", required=True)
     parser.add_argument("--policy-supplement", required=True)
+    parser.add_argument("--inputs", choices=("helper-0.163.0", "helper-0.167.2"), default="helper-0.163.0",
+                        help="Which saved input set to read (default keeps the 0.163.0 behaviour)")
     args = parser.parse_args()
     try:
         root = args.root.resolve(strict=True)
-        files, selection, report = build(root, "app-server", args.standard_license_supplement, args.policy_supplement)
+        files, selection, report = build(root, "app-server", args.standard_license_supplement, args.policy_supplement, args.inputs)
         g.publish(root, args.output, files, selection)
         print(json.dumps({"output": args.output, **report["summary"],
                           "draftSHA256": g.digest(files["THIRD-PARTY-NOTICES.draft.txt"]),

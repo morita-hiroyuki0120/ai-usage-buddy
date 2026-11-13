@@ -249,3 +249,103 @@ source提供依頼への回答期間は「30日以内」と決めた。
 
 `config/EmbeddedAppServer.json`は`distributionStatus: ready`、`noticeAudit`と`transitiveLicenseAudit`を`approved-by-project-owner-2026-11-11`に更新した。
 telemetry系の3つのauditは`incomplete`のまま変更していない。
+
+## 2026-11-13 helper 0.167.2 更新に伴う再生成
+
+同梱helperを0.163.0から公式`rust-v0.167.2`へ更新するため、notices草稿とsource案内の草稿を0.167.2用に作り直した。
+2026-11-11に承認された最終本文（`build/store-approved-inputs-20261111/`）は0.163.0用であり、0.167.2のhelperには使えない。
+最終本文の再承認が必要である。
+承認receiptは発行していない。
+`config/EmbeddedAppServer.json`は編集していない。
+新草稿は`draft-not-approved`、`distributionStatus`は`not-ready`である。
+ここに書く結論は根拠の整理であり、法的適合の断言ではない。
+
+### 固定した版と入力
+
+- GitHub APIで`rust-v0.167.2`を確認した。tag objectは`08a3b12b3298577534a28b62ed976acf8de66eda`（annotated tag）、commitは`ce21072c90d32c40af7a55b60b2fb35c84a43a6a`である。
+- codeloadのtar.gz（19,116,043 bytes）のSHA-256は`11e3321cd1a158dcfd920f8d24b07a08e896b9eaa7f4800f3042227b56342170`で、`build/helper-upgrade-0.167.2/`の別担当の取得物と一致した。
+- 取得物は[`build/dependency-audit/codex-0.167.2/`](../build/dependency-audit/codex-0.167.2/)に置いた（source-audit-ce21072c、rust-toolchain-audit-1.95.0/results）。
+- 依存集合は0.163.0と同じ方法で作った。`cargo metadata`と`cargo tree --edges normal,build`（`--target aarch64-apple-darwin --locked --offline`）の結果から、source graph由来の保守的候補を出した。
+- 実行したcargoは`metadata`と`tree`だけである。`cargo build`、build script、proc-macroは実行していない。
+- 初回の`cargo metadata`だけネットワークを使い、crates.ioとgit依存のmetadataとsourceを新規のcargo-homeへ取得した。
+- `v8`は0.167.2で`[patch.crates-io]`のgit依存（`seanh-oai/rusty_v8`）になった。submodule取得を避けるため、scratch copyでは同一commitのcodeload展開へのpathに差し替えて解決し、lockとpackage idはgit形式へ戻した。差し替え以外のlockの差分は、path crateのversion同期（`0.0.0`から`0.167.2`）だけである。
+- Cargo.lockは1479 package（registry 1296、path 171、git 12）で、registryのversion・checksumの組は0.163.0と同数の1296件である。
+- 依存の差分一覧は[`dependency-diff-0.163.0-to-0.167.2.json`](../build/dependency-audit/codex-0.167.2/dependency-diff-0.163.0-to-0.167.2.json)に保存した。
+
+### 依存差分の要約
+
+| 集合 | 0.163.0 | 0.167.2 |
+| --- | --- | --- |
+| app-server | 907 | 934 |
+| code-mode-host | 543 | 585 |
+| release union（2 binary） | 936 | 964 |
+
+app-server集合の内訳は次のとおりである。
+
+| 区分 | 0.163.0 | 0.167.2 | 追加 | 削除 |
+| --- | --- | --- | --- | --- |
+| 外部（registry・git） | 791 | 812 | 80 | 59 |
+| Codex path crate | 116 | 122 | 7 | 1 |
+
+- 新規の名前は15件である（cmov、cpubits、ctutils、flatbuffers、gix-macros、gix-parallel、gix-zlib、jiff-core、libbz2-rs-sys、lzma-rust2、mxc-sdk、objc2-security、sha1dc、typed-path、widestring）。
+- 消えた名前は9件である（gix-features、lzma-rs、lzma-sys、maybe-async、mxc_config_contract、mxc_telemetry、sha1-checked、wxc_common、xz2）。
+- 版が変わった名前は63件で、そのうちgix系が36件である。aes、cipher、digest等は旧版が残り、新版が加わった。
+- 同じ版で固定revisionだけ変わったのは、rmcpとrmcp-macros（`4048ac4`から`98a5478`）である。
+- lzmaは、`xz2`、`lzma-sys`、`lzma-rs`が消え、`lzma-rust2 0.21.0`（Apache-2.0）が入った。
+- 同名crateの宣言ライセンスが変わった件はない。
+- 追加80件のうち、本文候補は75件がcrate内に、flatbuffersとobjc2-securityの2件が上流の固定commitにある。mxc-sdk、rmcp、rmcp-macrosの3件はgit repositoryのLICENSEである。
+- 追加のうち`v8`（git fork）と`deno_core_icudata 0.78.0`はcode-mode-hostだけの集合に入り、app-server集合の外である。
+
+### ライセンス上の確認結果（app-server集合）
+
+| 観点 | 結果 |
+| --- | --- |
+| 全文候補なし | 新規なし。既存の5件（debugserver-types、eventsource-stream、fxhash、io_tee、objc2-foundation）は同じ版のまま、標準条項の併記で変わらない。 |
+| OR選択 | 新規のOR宣言は67件で、すべて寛容なライセンス同士である。新しい組み合わせは`CC0-1.0 OR MIT-0 OR Apache-2.0`（constant_time_eq 0.4.2）だけである。`Apache-2.0 OR GPL-2.0-only`は既存のself_cellだけで、Q5の方針のまま変わらない。 |
+| copyleft | MPL-2.0の12候補（nucleo、nucleo-matcher、option-ext、symphonia系9件）は同じ版・同じ固定sourceのままである。GPL、LGPL、EPL等の単独宣言の新規はない。 |
+| NOTICE必須 | 第三者の新規NOTICEファイルは見つからなかった。noticeまたはcopyright参照は145件から151件に増えたが、増分6件はCodex rootのNOTICEを共有する新規path crateである。gix-trace 0.3.0には、派生元tracing-forestのMIT帰属を記す`LICENSE-MIT-tracing-forest`が同梱され、全文候補として表示される。 |
+| SDK留保 | objc2-security 0.3.2が新規である。固定commit `7b1abfd`の`LICENSE.md`は、objc2-app-kit等と同じ文面である（同じファイルのbytesを再利用し、GitHubのblob shaと照合した）。 |
+| 版差（historical snapshot） | 新規なし。既存の11件は版が変わらず、`historical-snapshot-scope-and-NOTICE-review-pending`を維持している。 |
+| repository-license-scopeの未確認 | 新規のgit依存3件（mxc-sdk、rmcp、rmcp-macros）をQ14・Q15と同じ根拠の取り方で記録した。open issueは0件である。 |
+| その他の新規ライセンス種別 | bzip2-1.0.6（libbz2-rs-sys、crate内にLICENSE）とCC0-1.0、MIT-0（constant_time_eq）が新しい。lzma-rust2は「tukaani xz for java」からの移植と説明されるが、crateに移植元の帰属表示は同梱されていない。 |
+
+### 承認済み方針の引き継ぎ状況
+
+- policy manifestは[`build/license-policy-supplement-20261113/manifest.json`](../build/license-policy-supplement-20261113/manifest.json)である。作成手順は同directoryの`record-scripts/make_manifest.py`に記録した。
+- Q1（標準条項の併記）：対象6件は同じ版・同じcrate checksumのまま引き継いだ。標準条項のmanifestは`standard-license-supplement-20261113`に、同じ本文のコピーとして置いた。
+- Q2（display_container 0.9.0）、Q3（fxhash）、Q5（self_cell）、Q12（Meta系6件）、Q13（allocative系）、Q16（nucleo）は、crateの版が同じなので、そのまま引き継いだ。版固有の根拠（公開日と同日commit、byte一致）は、版が変わっていないため再確認していない。
+- Q4・Q6・Q7・Q10：現行の構成を維持した。NOTICEの参照は、上の表のとおり増えた。
+- Q14：mxc系3件（mxc_config_contract、mxc_telemetry、wxc_common）は0.167.2の集合から消えた。代わりにmxc-sdk 1.0.0を、同じ根拠の取り方（manifestの宣言、root `LICENSE.md`の配置、workspace継承の解決）で記録した。root `LICENSE.md`は0.163.0の固定commitのものとbyte一致した。
+- Q15：rmcpとrmcp-macrosは新しい固定revision `98a5478`で再確認した。root `LICENSE`（MIT移行中の注記、Apache-2.0本文、MIT本文）は旧revisionとbyte一致し、`mustContain`の2文も通った。
+- Q8・Q9・Q10・Q11：source案内で扱う。MPL-2.0の12候補は変わらない。
+- 新草稿から0.163.0固有の記述を外した。path crateのrecorded-size-unavailableは、サイズを記録したので解消した（232件が0件）。
+
+### 生成結果
+
+- notices草稿：[`build/third-party-notices-app-server-draft-20261113/`](../build/third-party-notices-app-server-draft-20261113/validation.json)。934 component、504本文、noticeまたはcopyright参照151件、全文候補なし5件、標準条項6 component・10参照である。
+- `THIRD-PARTY-NOTICES.draft.txt`は2,162,660 bytes、SHA-256は`309dc8a72a47deed599efb22c353bbb55099af4a4a2c2fa3d6bb66d88a6559ee`である。
+- 旧草稿20261111-2と比べて、共通のcomponentでtext・issue・宣言が変わったものは0件である。path crateの差は、recorded-size-unavailableの解消だけである。
+- 1743のtext参照が504本文のいずれかと一致し、1747の証拠fileのhashとsizeを再計算して照合した。local pathの混入はない。
+- source案内の改訂草稿：[`build/source-availability-draft-20261113/`](../build/source-availability-draft-20261113/validation.json)。窓口はGitHub Issue、回答期間は30日以内（改訂3で承認済みの文言を引き継ぎ、改訂4は未承認と明記）、Codexは0.167.2とcommit `ce21072c`に更新した。SHA-256は`7c1f37bb1e528267876b9cc42c625cfeb5d8c89e39927ed5a9481fdd5e1e5a76`である。
+- 生成器の改修は最小限である。`Tools/ThirdPartyNotices/helper_update.py`を追加し、`generate_policy_draft.py`に`--inputs helper-0.167.2`を加えた（既定は従来どおり）。fixtureは58件に11件を加えた69件が成功した。
+
+### 新たに人間の判断が要る項目
+
+- [ ] Q17：objc2-security 0.3.2（新規）にも、Q4と同じ扱い（Apple SDK留保を原文のまま表示し、残余リスクを受け入れる）を適用するか。推奨：はい。固定commitの`LICENSE.md`が同じで、既存のobjc2系と別に扱う理由がないためである。
+- [ ] Q18：新しいcrateのライセンス種別（CC0-1.0、MIT-0、bzip2-1.0.6、gix-traceの派生元MIT帰属）にも、Q6・Q7と同じ扱い（上流の全文を原文のまま併記し、個別のOR選択は記録しない）を適用するか。推奨：はい。いずれも全文がcrate内にあり、新しい扱いを要する条件は見つからなかったためである。
+- [ ] Q19：lzma-rust2 0.21.0の移植元「tukaani xz for java」の帰属を、公開情報だけで追加調査するか。推奨：はい。現行はcrateのApache-2.0全文のみを表示しており、移植元の帰属は確認していないためである。調査は公開情報の取得に限り、第三者へは連絡しない。
+
+Q17〜Q19が「いいえ」の場合の扱いは、回答を受けてから決める。
+上記以外に、新たな判断が必要な項目は見つからなかった。
+最終本文の再承認（THIRD-PARTY-NOTICESとSOURCE-AVAILABILITYの0.167.2版）は、Q17〜Q19とは別に必要である。
+
+### 確認できていないこと
+
+- 934件が実binaryに含まれることは、証明していない。source graph由来の保守的候補である。
+- 参考として、0.167.2のapp-server binary（別担当の取得物）の文字列を数えた。lzma-rust2は24件、gix-zlibは5件、jiff-0.2.38は20件、zip-9.0.0は7件に一致した。v8、mxc-sdk、flatbuffers、objc2-securityは0件である。これは含有の証明でも除外の証明でもない。
+- code-mode-host専用の追加（v8のgit fork、deno_core_icudata 0.78.0）は、app-server集合の外とした。0.163.0と同じ扱いで、配布tar.gzにcode-mode-hostが含まれるかは確認していない。
+- deno_core_icudata 0.78.0とv8のgit forkには、上流の追加取得をしていない。
+- flatbuffers 25.12.19は、crate内にlicenseがなく、固定commitのroot `LICENSE`（Apache-2.0）を上流候補とした。`rust/flatbuffers`配下に別のlicenseはない（GitHub APIの一覧で確認）。適用範囲のレビューは未完で、`upstream-candidate-applicability-unreviewed`を付けた。
+- 版が同じでも、新しいversion固有のNOTICEやcopyrightが他にあるかは網羅していない。
+- 新規のregistry crate 77件について、`.crate`内の名前による候補だけを集めた。READMEやsource headerのcopyright表示は、既存の方針（Q3・Q16）の対象を除き、探していない。
+- 既存の`build/`配下、`build/store-approved-inputs-20261111/`、`config/EmbeddedAppServer.json`、`Tools/StorePackaging/`、Sources、Store、scripts、siteは変更していない。

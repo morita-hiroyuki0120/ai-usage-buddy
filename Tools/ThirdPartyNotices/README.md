@@ -220,3 +220,27 @@ PYTHONDONTWRITEBYTECODE=1 python3 Tools/ThirdPartyNotices/generate_policy_draft.
   --standard-license-supplement build/dependency-audit/codex-0.163.0/rust-toolchain-audit-1.95.0/results/standard-license-supplement-20261024/manifest.json \
   --policy-supplement build/license-policy-supplement-20261111-2/manifest.json
 ```
+
+## 2026-11-13 helper 0.167.2 用の入力
+
+`helper_update.py`は、0.167.2の保存済み資料から、0.163.0用の生成器が読むものと同じ形のJSONを作る。
+`prepare`は、保存したCargo.lock、`cargo metadata`の出力、`cargo tree`の出力、registryの`.crate`、cargoのgit checkoutだけを読む。
+依存コード、build script、ネットワークは使わない。
+出力先が存在する場合は失敗する。
+
+- `load_components`は、lockの項目（name、version、source、checksum）が0.163.0と同一なcrateについて、検証済みの0.163.0のcomponentを再利用する。同一でない項目は、新しい資料から作る。
+- 再利用するcomponentがlockのchecksumや宣言と食い違えば、失敗とする。
+- 入力のcommitが`ce21072c90d32c40af7a55b60b2fb35c84a43a6a`と異なれば、失敗とする。
+- `.crate`は通常fileだけを読み、linkは辿らない。重複、絶対path、`..`、複数のrootは拒否する。
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 Tools/ThirdPartyNotices/generate_policy_draft.py \
+  --output build/third-party-notices-app-server-draft-NEW \
+  --standard-license-supplement build/dependency-audit/codex-0.167.2/rust-toolchain-audit-1.95.0/results/standard-license-supplement-20261113/manifest.json \
+  --policy-supplement build/license-policy-supplement-20261113/manifest.json \
+  --inputs helper-0.167.2
+```
+
+`--inputs`の既定は`helper-0.163.0`で、従来の動作は変わらない。
+fixtureは58件に`tests/test_helper_update.py`の11件を加えた69件が成功した。
+新規の草稿は`build/third-party-notices-app-server-draft-20261113/`（934 component、504本文）で、常に`draft-not-approved`かつ`not-ready`である。
