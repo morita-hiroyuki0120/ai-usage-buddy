@@ -354,6 +354,24 @@ def apply_policy(root, components, input_refs, relative):
                 "derivation": "Exact leading line-comment region of the pinned file (blank lines inside the region kept, trailing blank line excluded); not license terms of the component; nothing added or edited.",
                 "holderYearNote": "Wording is shown as found in the file, including any typos; no holder or year is added."}}
 
+    # Q19: record why no further attribution text is added (nothing is composed or added to the public text).
+    for entry in manifest.get("attributionReviews", []):
+        identity, component, lock = target("attribution", entry)
+        crate = crate_files(identity, lock)
+        g.need(component.get("attributionReview") is None and entry["addedText"] == "none" and entry["conclusion"] and
+               entry["sources"], "policy attribution review is incomplete")
+        for st in entry["crateStatements"]:
+            g.need(st["text"].encode("utf-8") in crate.get(st["member"], b""), "policy attribution statement absent from the published crate")
+        for f in entry["sources"]:
+            _read(root, f["path"], f["sha256"], f["size"])
+            refs.append({"path": f["path"], "sha256": f["sha256"]})
+        updated[identity] = {**updated.get(identity, component),
+            "attributionReview": {"approvalItem": entry["approvalItem"], "conclusion": entry["conclusion"],
+                "basis": entry["basis"], "crateStatements": entry["crateStatements"],
+                "sources": [{k: f[k] for k in ("url", "sha256", "size")} for f in entry["sources"]],
+                "remainingOpen": entry["remainingOpen"], "addedText": "none",
+                "interpretation": "Public-information review recorded; no attribution text was composed or added; not a legal conclusion."}}
+
     return [updated.get(tuple(c["lockIdentity"]), c) for c in components], refs
 
 
@@ -386,8 +404,9 @@ def finish(files, report, manifest):
         "commitCorrections": [c["name"] + " " + c["version"] for c in report["components"] if c.get("commitCorrectionReview")],
         "declarationRecords": [c["name"] + " " + c["version"] for c in report["components"] if c.get("declarationRecord")],
         "scopeResolutions": [c["name"] + " " + c["version"] for c in report["components"] if c.get("scopeResolution")],
-        "gitSourceHeaders": [c["name"] + " " + c["version"] for c in report["components"] if c.get("gitSourceHeaderReview")]}
-    extra_fields = ("commitCorrectionReview", "declarationRecord", "scopeResolution", "gitSourceHeaderReview")
+        "gitSourceHeaders": [c["name"] + " " + c["version"] for c in report["components"] if c.get("gitSourceHeaderReview")],
+        "attributionReviews": [c["name"] + " " + c["version"] for c in report["components"] if c.get("attributionReview")]}
+    extra_fields = ("commitCorrectionReview", "declarationRecord", "scopeResolution", "gitSourceHeaderReview", "attributionReview")
     for c in report["components"]:
         if c.get("scopeResolution") and "licenseEvidenceAvailability" in c:
             c["licenseEvidenceAvailability"] = {**c["licenseEvidenceAvailability"],

@@ -331,9 +331,9 @@ app-server集合の内訳は次のとおりである。
 
 ### 新たに人間の判断が要る項目
 
-- [ ] Q17：objc2-security 0.3.2（新規）にも、Q4と同じ扱い（Apple SDK留保を原文のまま表示し、残余リスクを受け入れる）を適用するか。推奨：はい。固定commitの`LICENSE.md`が同じで、既存のobjc2系と別に扱う理由がないためである。
-- [ ] Q18：新しいcrateのライセンス種別（CC0-1.0、MIT-0、bzip2-1.0.6、gix-traceの派生元MIT帰属）にも、Q6・Q7と同じ扱い（上流の全文を原文のまま併記し、個別のOR選択は記録しない）を適用するか。推奨：はい。いずれも全文がcrate内にあり、新しい扱いを要する条件は見つからなかったためである。
-- [ ] Q19：lzma-rust2 0.21.0の移植元「tukaani xz for java」の帰属を、公開情報だけで追加調査するか。推奨：はい。現行はcrateのApache-2.0全文のみを表示しており、移植元の帰属は確認していないためである。調査は公開情報の取得に限り、第三者へは連絡しない。
+- [x] Q17：objc2-security 0.3.2（新規）にも、Q4と同じ扱い（Apple SDK留保を原文のまま表示し、残余リスクを受け入れる）を適用するか。 2026-11-13 ユーザー承認
+- [x] Q18：新しいcrateのライセンス種別（CC0-1.0、MIT-0、bzip2-1.0.6、gix-traceの派生元MIT帰属）にも、Q6・Q7と同じ扱いを適用するか。 2026-11-13 ユーザー承認
+- [x] Q19：lzma-rust2 0.21.0の移植元の帰属を、公開情報だけで追加調査するか。 2026-11-13 ユーザー承認（調査を依頼。結果は下の節）
 
 Q17〜Q19が「いいえ」の場合の扱いは、回答を受けてから決める。
 上記以外に、新たな判断が必要な項目は見つからなかった。
@@ -349,3 +349,35 @@ Q17〜Q19が「いいえ」の場合の扱いは、回答を受けてから決�
 - 版が同じでも、新しいversion固有のNOTICEやcopyrightが他にあるかは網羅していない。
 - 新規のregistry crate 77件について、`.crate`内の名前による候補だけを集めた。READMEやsource headerのcopyright表示は、既存の方針（Q3・Q16）の対象を除き、探していない。
 - 既存の`build/`配下、`build/store-approved-inputs-20261111/`、`config/EmbeddedAppServer.json`、`Tools/StorePackaging/`、Sources、Store、scripts、siteは変更していない。
+
+### 2026-11-13 Q17〜Q19の承認と反映
+
+Q17とQ18は、2026-11-13にユーザー（人間）が承認した。Q19は調査の実施を依頼された。
+承認は方針の承認であり、最終本文の承認でも、承認receiptの発行でもない。
+最終本文の再承認は未了である。`config/EmbeddedAppServer.json`は編集していない。
+Q17とQ18は、既存の扱いの適用であり、草稿の本文は変わらない。
+
+反映した成果物は次のとおりである。
+
+- policy manifest：[`build/license-policy-supplement-20261113-2/manifest.json`](../build/license-policy-supplement-20261113-2/manifest.json)。20261113にQ17・Q18の承認記録とQ19の`attributionReviews`を加えた。
+- 新草稿：[`build/third-party-notices-app-server-draft-20261113-2/`](../build/third-party-notices-app-server-draft-20261113-2/validation.json)。934 component、504本文、`THIRD-PARTY-NOTICES.draft.txt`は2,162,660 bytes、SHA-256は`309dc8a72a47deed599efb22c353bbb55099af4a4a2c2fa3d6bb66d88a6559ee`である。
+- 20261113の草稿とtxtはbyte一致する。差は、lzma-rust2の`attributionReview`が内部manifestに加わった1 componentだけである。
+- 生成器に`attributionReviews`節を加えた（記録のみで、本文は加えない）。fixtureは71件が成功した。
+
+#### Q19の調査結果：lzma-rust2 0.21.0の移植元の帰属
+
+結論：調べた範囲では、追加で表示すべき帰属は見つからず、本文は加えなかった。表示が望ましいと判断できる根拠もなかった。
+
+- crate内（README.md、src/lib.rs、Cargo.toml）は、「tukaani xz for javaからの移植」と、「unmaintainedなlzma-rust crateのfork」と書くだけである。移植元の版、著作者、ライセンスは書いていない。
+- crateのsource fileにcopyright headerはなく、crateの`LICENSE`はApache-2.0の原文で、copyright holderの行がない。上流のcommit `7405a770`のroot `LICENSE`と同一である。
+- tukaani.orgのXZ for Javaのページ（2026-11-13取得）は、1.10以降が0BSD、1.9以前がpublic domainと述べる。
+- xz-javaの`COPYING`は0BSDの本文で、著作権表示や許諾表示の保持を条件としない。
+- 以上から、保持を求める表示がcrateにもXZ for Java側にも見つからない。XZ for Javaの`COPYING`は、このpackageに含まれず、移植した版も不明なので、補作を避けて加えなかった。
+- 根拠のファイルとhashは[`build/license-decision-check-20261113-lzma/`](../build/license-decision-check-20261113-lzma/)に保存した。manifestの`attributionReviews`は、crateの記述の存在とこれらのhashを生成時に照合する。
+
+残る未確認点は次のとおりである。
+
+- どの版のXZ for Javaから移植したかは、確認できなかった。そのため、移植部分にpublic domainと0BSDのどちらが当たるかは確定していない。
+- forkの元のlzma-rust crateは調べていない。そのcopyright holderとライセンスは記録していない。
+- BCJ filter、CRC、lzip等に別の出所があるかは調べていない。
+- 法的結論ではない。各crateの配布時の適用、copyright、NOTICEのレビューは未完である。

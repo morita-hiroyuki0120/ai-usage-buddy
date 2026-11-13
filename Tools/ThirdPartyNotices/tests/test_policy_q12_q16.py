@@ -399,5 +399,33 @@ class GitHeaderTests(Base):
             self.assertEqual(out["approvedPolicy"][key], [])
 
 
+class AttributionReviewTests(Base):
+    def setUp(self):
+        super().setUp()
+        self.reload({"Cargo.toml": tp.CARGO, "Cargo.toml.orig": tp.CARGO, "lib.rs": LIB, "README.md": b"Ported from Original Project.\n"},
+                    "Apache-2.0")
+        self.manifest["attributionReviews"] = [{"name": "demo", "version": "1.0", "lockSource": g.REGISTRY, "approvalItem": "Q19",
+            "conclusion": "no further text", "basis": ["fixture"], "addedText": "none", "remainingOpen": ["fixture"],
+            "crateStatements": [{"member": "README.md", "text": "Ported from Original Project."}],
+            "sources": [{"url": "https://example.test/x", **self.put("src/x.txt", b"upstream statement\n")}]}]
+
+    def test_review_is_recorded_without_adding_text(self):
+        self.save()
+        components, refs = self.apply(self.components)
+        demo = next(c for c in components if c["name"] == "demo")
+        self.assertEqual(demo["attributionReview"]["addedText"], "none")
+        self.assertEqual(demo["evidence"], self.demo["evidence"])
+
+    def test_absent_statement_changed_source_or_added_text_is_rejected(self):
+        for mutate in (lambda e: e["crateStatements"][0].update(text="Not in the crate"),
+                       lambda e: e["sources"][0].update(sha256="0" * 64),
+                       lambda e: e.update(addedText="LICENSE")):
+            self.setUp()
+            mutate(self.manifest["attributionReviews"][0])
+            self.save()
+            with self.assertRaises(p.g.AuditError):
+                self.apply(self.components)
+
+
 if __name__ == "__main__":
     unittest.main()
