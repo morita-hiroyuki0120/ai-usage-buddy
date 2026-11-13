@@ -61,6 +61,7 @@ TECHNICAL NOTES
 - App Sandbox is enabled. Entitlements: app-sandbox and network.client only (for communication with OpenAI). The app does not use network.server and does not listen on any local port.
 - The bundled helper runs as a child process inside the app's sandbox (app-sandbox + inherit) and talks to the app over stdio. Plugins and analytics are disabled by fixed launch settings, and OpenTelemetry exporters are set to none.
 - Each connected account uses an isolated workspace in the app container. Delete account attempts an official logout, stops the helper, and removes the local data. It does not delete the OpenAI account.
+- This build (1.0 (3)) updates the bundled helper to OpenAI Codex app-server 0.167.2, which no longer links the non-public /usr/lib/liblzma.
 - Default shortcuts: Control-Option-U shows quick usage, Control-Option-R refreshes. Notification delivery requires macOS permission.
 
 Thank you for reviewing.
