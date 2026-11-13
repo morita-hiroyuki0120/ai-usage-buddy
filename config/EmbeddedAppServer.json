@@ -1,13 +1,13 @@
 {
   "component": "codex-app-server",
-  "version": "0.163.0",
-  "tag": "rust-v0.163.0",
-  "sourceCommit": "83086188ae0614bd882818ff1aa23f3194962012",
-  "officialReleaseAPI": "https://api.github.com/repos/openai/codex/releases/tags/rust-v0.163.0",
+  "version": "0.167.2",
+  "tag": "rust-v0.167.2",
+  "sourceCommit": "ce21072c90d32c40af7a55b60b2fb35c84a43a6a",
+  "officialReleaseAPI": "https://api.github.com/repos/openai/codex/releases/tags/rust-v0.167.2",
   "artifact": {
     "name": "codex-app-server-aarch64-apple-darwin.tar.gz",
-    "url": "https://github.com/openai/codex/releases/download/rust-v0.163.0/codex-app-server-aarch64-apple-darwin.tar.gz",
-    "sha256": "8165de84cc8e436d46d5e52fe6b68de053ba729c543e6310a1bd41e881cf4c37",
+    "url": "https://github.com/openai/codex/releases/download/rust-v0.167.2/codex-app-server-aarch64-apple-darwin.tar.gz",
+    "sha256": "6d42b6a34bbe05d083e66b0dec65e23db77b2c87a82435882acfda043aab1e06",
     "architecture": "arm64",
     "minimumOS": "macOS 11"
   },
@@ -25,10 +25,10 @@
     ],
     "caveat": "analytics.enabled=false alone does not disable custom OTLP metrics"
   },
-  "noticeAudit": "approved-by-project-owner-2026-11-11",
-  "transitiveLicenseAudit": "approved-by-project-owner-2026-11-11",
+  "noticeAudit": "pending",
+  "transitiveLicenseAudit": "pending",
   "telemetryAudit": "incomplete",
   "mcpStartupAudit": "incomplete",
   "analyticsEventsClientAudit": "incomplete",
-  "distributionStatus": "ready"
+  "distributionStatus": "not-ready"
 }

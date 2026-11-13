@@ -25,7 +25,7 @@ class PackagingTests(unittest.TestCase):
         self.inputs = self.root / "inputs"
         self.inputs.mkdir()
         self.config = self.root / "config.json"
-        self.config_data = {"version": "0.163.0", "tag": "rust-v0.163.0", "sourceCommit": p.COMMIT,
+        self.config_data = {"version": "0.167.2", "tag": "rust-v0.167.2", "sourceCommit": p.COMMIT,
                             "artifact": {"sha256": p.ARCHIVE_SHA}, "distributionStatus": "ready"}
         self.archive = self.inputs / "fixture.tar.gz"
         self.make_tar(p.MEMBER)

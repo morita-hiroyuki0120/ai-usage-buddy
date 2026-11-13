@@ -12,7 +12,7 @@
 
 | 入力 | 照合 |
 |---|---|
-| 固定helper tar.gz | version 0.163.0、tag rust-v0.163.0、commit `83086188ae0614bd882818ff1aa23f3194962012`、SHA-256 `8165de84cc8e436d46d5e52fe6b68de053ba729c543e6310a1bd41e881cf4c37` |
+| 固定helper tar.gz | version 0.167.2、tag rust-v0.167.2、commit `ce21072c90d32c40af7a55b60b2fb35c84a43a6a`、SHA-256 `6d42b6a34bbe05d083e66b0dec65e23db77b2c87a82435882acfda043aab1e06` |
 | `approval.json` | 呼出側が指定するSHA-256、config全文hash、sourceとartifactのpin、明示的review status |
 | appのMIT本文 | 現在のroot LICENSEとのhash一致 |
 | helper root LICENSEとNOTICE | 保存済み固定tag本文のhash一致 |

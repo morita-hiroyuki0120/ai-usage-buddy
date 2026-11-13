@@ -7,9 +7,9 @@ SCHEME="AIUsageBuddyStore"
 BUNDLE_ID="com.aiusagebuddy.app.store.validation"
 TEAM_ID="9HYDLV4RY2"
 UPSTREAM_TEAM_ID="2DC432GLL2"
-EXPECTED_SHA256="8165de84cc8e436d46d5e52fe6b68de053ba729c543e6310a1bd41e881cf4c37"
-RELEASE_URL="https://github.com/openai/codex/releases/download/rust-v0.163.0/codex-app-server-aarch64-apple-darwin.tar.gz"
-CACHED_TARBALL="$ROOT/build/dependency-audit/codex-0.163.0/codex-app-server-aarch64-apple-darwin.tar.gz"
+EXPECTED_SHA256="6d42b6a34bbe05d083e66b0dec65e23db77b2c87a82435882acfda043aab1e06"
+RELEASE_URL="https://github.com/openai/codex/releases/download/rust-v0.167.2/codex-app-server-aarch64-apple-darwin.tar.gz"
+CACHED_TARBALL="$ROOT/build/dependency-audit/codex-0.167.2/codex-app-server-aarch64-apple-darwin.tar.gz"
 HELPER_ENTITLEMENTS="$ROOT/Tools/StoreRuntimeValidation/codex-app-server.entitlements"
 APP_ENTITLEMENTS="$ROOT/Store/AIUsageBuddyStore.entitlements"
 DEVELOPER_DIR_PATH="/Applications/Xcode.app/Contents/Developer"
@@ -274,10 +274,10 @@ PY
     [[ -f "$output_root/prepared-manifest.json" ]] || fail 'prepared artifact manifest was not written'
 
     local notice_dir
-    notice_dir="$ROOT/build/dependency-audit/codex-0.163.0/source-licenses"
+    notice_dir="$ROOT/build/dependency-audit/codex-0.167.2/source-licenses"
     [[ -f "$notice_dir/LICENSE" && -f "$notice_dir/NOTICE" ]] || fail 'pinned helper license or notice is missing'
-    /bin/mkdir -p "$output_root/ThirdPartyNotices/codex-app-server-0.163.0"
-    /bin/cp "$notice_dir/LICENSE" "$notice_dir/NOTICE" "$output_root/ThirdPartyNotices/codex-app-server-0.163.0/"
+    /bin/mkdir -p "$output_root/ThirdPartyNotices/codex-app-server-0.167.2"
+    /bin/cp "$notice_dir/LICENSE" "$notice_dir/NOTICE" "$output_root/ThirdPartyNotices/codex-app-server-0.167.2/"
     /bin/cp "$ROOT/Tools/StoreRuntimeValidation/LOCAL-VALIDATION-ONLY.txt" "$output_root/"
 
     printf 'Prepared local %s app (%s): %s\n' "$mode" "$bundle_id" "$app_path"

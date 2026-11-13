@@ -10,7 +10,7 @@ Run `bash scripts/validate-store-runtime.sh --prepare-keyring-interactive` to pr
 
 `--launch-after-go` remains limited to the `com.aiusagebuddy.app.store.validation` harness and `store-validation.*` paths. It binds that app/helper to the prepare manifest, rechecks strict signatures, Team IDs, and entitlements, then requires the current run's report to show status `0`, completed shutdown, and no owned helper process. It reads only fixed allowlisted report fields. It does not launch either interactive Store UI build.
 
-All preparation modes use the pinned Codex `rust-v0.163.0` helper. The source artifact hash and upstream signature are checked before copying; the embedded helper is signed with sandbox inheritance and the app with the Store app entitlements. The upstream license and notice accompany each local artifact. Transitive dependency notices are incomplete, so none of these artifacts is redistributable.
+All preparation modes use the pinned Codex `rust-v0.167.2` helper. The source artifact hash and upstream signature are checked before copying; the embedded helper is signed with sandbox inheritance and the app with the Store app entitlements. The upstream license and notice accompany each local artifact. Transitive dependency notices are incomplete, so none of these artifacts is redistributable.
 
 Preparation uses `--timestamp=none` only for these local validation artifacts. It is not an acceptable signing procedure for distribution; the eventual Mac App Store build must use the production Apple distribution workflow and its required signing/timestamping.
 

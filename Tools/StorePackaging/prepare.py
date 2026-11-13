@@ -13,8 +13,8 @@ import tarfile
 REPO = Path(__file__).resolve().parents[2]
 TEAM = "9HYDLV4RY2"
 BID = "com.aiusagebuddy.app.store"
-COMMIT = "83086188ae0614bd882818ff1aa23f3194962012"
-ARCHIVE_SHA = "8165de84cc8e436d46d5e52fe6b68de053ba729c543e6310a1bd41e881cf4c37"
+COMMIT = "ce21072c90d32c40af7a55b60b2fb35c84a43a6a"
+ARCHIVE_SHA = "6d42b6a34bbe05d083e66b0dec65e23db77b2c87a82435882acfda043aab1e06"
 MEMBER = "codex-app-server-aarch64-apple-darwin"
 HELPER_ID = BID + ".codex-app-server"
 CHILD = {"com.apple.security.app-sandbox": True, "com.apple.security.inherit": True}
@@ -83,7 +83,7 @@ def checked_file(root, record):
 def approved_inputs(config_path, root, approval_sha):
     root = safe_path(root)
     config = load(config_path)
-    require(config["version"] == "0.163.0" and config["tag"] == "rust-v0.163.0" and
+    require(config["version"] == "0.167.2" and config["tag"] == "rust-v0.167.2" and
             config["sourceCommit"] == COMMIT and config["artifact"]["sha256"] == ARCHIVE_SHA,
             "source-pin-mismatch")
     require(config["distributionStatus"] == "ready", "distribution-not-ready")
