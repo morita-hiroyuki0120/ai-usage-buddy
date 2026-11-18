@@ -26,4 +26,8 @@ scripts/sign-and-notarize.sh
 # エディタ・個人用
 *.xcuserdatad/
 .vscode/
-idea/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
